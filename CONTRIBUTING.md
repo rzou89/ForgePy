@@ -10,15 +10,28 @@ Prefer clear, focused automation; explicit module boundaries; visible side effec
 
 ForgePy currently uses only the Python standard library and has an empty root `requirements.txt`.
 
-Prerequisites are Git, CPython 3.12+ with the standard-library `venv` module, and PowerShell for the commands below. Git is required for project creation; if its executable is unavailable when the final Git stage is reached, creation fails and may leave an already-generated partial project. ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other operating systems are not officially supported in v1.0. Linux, macOS, and alternative Python implementations remain unsupported and unverified. CPython 3.12, 3.13, and 3.14 are the required v1.0 validation targets.
+Prerequisites are Git and CPython 3.12+ with the standard-library `venv` module. Git is required for project creation; if its executable is unavailable when the final Git stage is reached, creation fails and may leave an already-generated partial project. ForgePy v1.0 officially supports Windows 10, Windows 11, and Linux on CPython. macOS and alternative Python implementations remain unsupported and unverified. CPython 3.12, 3.13, and 3.14 are the required v1.0 validation targets.
 
 Generated-project requirements are separate from ForgePy's empty root requirements file. The `basic` template declares `PySide6`, `pandas`, and `openpyxl`; the minimal `library` and `cli` templates write empty requirements files. A full create run still upgrades packaging tools, so it may require network access.
+
+Windows PowerShell:
 
 ```powershell
 git clone <repository-url>
 cd ForgePy
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+forgepy --help
+```
+
+Linux:
+
+```bash
+git clone <repository-url>
+cd ForgePy
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -e .
 forgepy --help
 ```
@@ -37,11 +50,11 @@ Package license metadata uses the SPDX expression `MIT` and distributes the
 root `LICENSE` file. This does not introduce a CLA, copyright assignment, DCO,
 or other contributor-licensing process.
 
-The implementation and generated VS Code configuration currently assume Windows-style virtual-environment paths.
+The implementation and generated VS Code configuration use platform-aware virtual-environment paths for Windows and POSIX systems.
 
-Repository CI is defined in `.github/workflows/ci.yml` and targets `windows-latest` with CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 job also builds and inspects the wheel and sdist, installs the wheel in an isolated environment, runs the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands from outside the checkout, verifies the expected ForgePy version, and verifies that tests and `utils` remain absent from the distribution artifacts.
+Repository CI is defined in `.github/workflows/ci.yml` and targets both `windows-latest` and `ubuntu-latest` with CPython 3.12, 3.13, and 3.14. Every matrix entry runs the full unit suite, `compileall`, and packaging/support tests. The Python 3.12 jobs also build and inspect the wheel and sdist, install the wheel in an isolated environment, run the installed `forgepy --help`, `forgepy version`, `forgepy list`, and `forgepy component list` commands from outside the checkout, verify the expected ForgePy version, and verify that tests and `utils` remain absent from the distribution artifacts.
 
-The CPython 3.12, 3.13, and 3.14 matrix currently passes and must remain green as the project approaches v1.0. The hosted `windows-latest` runner validates Windows runner compatibility but does not literally prove both Windows 10 and Windows 11 client editions; native client smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
+The CPython 3.12, 3.13, and 3.14 matrix on Windows and Ubuntu must remain green as the project approaches v1.0. The hosted runners validate those environments but do not literally prove every Windows edition or Linux distribution. A full project-creation smoke test has been completed successfully on CachyOS Linux; additional native-platform smoke validation may remain a release-stage manual check. This repository workflow is intentionally richer than the independent `github-actions` component generated into user projects.
 
 PyPI publishing is defined separately in `.github/workflows/publish.yml`. It
 builds fresh distributions, transfers them through a workflow artifact, and

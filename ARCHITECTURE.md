@@ -66,10 +66,10 @@ ForgePy/
 | `cli/commands/component_command.py` | Lists registered components, presents project-local installed state, delegates add operations to `ComponentInstaller`, and adapts operational errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
-| `models/project_config.py` | Validates the generated-content-safe Windows project name, stores the selected location, and derives the root path. |
+| `models/project_config.py` | Validates a generated-content-safe, Windows-compatible project name for portability across supported platforms, stores the selected location, and derives the root path. |
 | `core/project_generator.py` | Orchestrates the complete create workflow. |
 | `core/environment_builder.py` | Creates `.venv` with the running Python interpreter. |
-| `core/requirements_installer.py` | Installs the generated requirements with the new environment's `pip.exe`. |
+| `core/requirements_installer.py` | Installs generated requirements through the new environment's Python executable using `python -m pip`. |
 | `core/git_builder.py` | Requires Git, initializes the repository, stages files, and creates the required initial commit. |
 | `core/vscode_builder.py` | Renders and writes `.vscode` files for an explicit template entry-point requirement. |
 | `builders/` | Creates folders/files and upgrades Python packaging tools. |
@@ -106,7 +106,7 @@ ForgePy/
 | `tests/test_component_state.py` | Verifies isolated project-local state loading, validation, deterministic atomic persistence, and registry independence. |
 | `tests/test_component_validation.py` | Verifies direct dependency/conflict checks, aggregated failures, registry isolation, and validation without writes or installation. |
 | `tests/test_github_actions_component.py` | Verifies GitHub Actions metadata, manifest, registration order, nested workflow creation, installer integration, isolation, and existing-target behavior. |
-| `tests/test_repository_ci.py` | Verifies repository CI triggers, Windows/CPython matrix, validation commands, artifact inspection, wheel installation, and installed CLI probes without parsing a full YAML snapshot. |
+| `tests/test_repository_ci.py` | Verifies repository CI triggers, Windows/Linux/CPython matrix, validation commands, artifact inspection, wheel installation, and installed CLI probes without parsing a full YAML snapshot. |
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_ruff_component.py` | Verifies Ruff metadata, manifest, deterministic registration, isolated installation, installer integration, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
@@ -559,16 +559,16 @@ these into status `1`. Packaging-tool upgrades and requirements installation
 may require network access. A failure stops later stages but leaves the partial
 destination for the user to inspect or remove before retrying.
 
-ForgePy v1.0 officially supports Windows 10 and Windows 11 on CPython. Other operating systems are not officially supported in v1.0. The supported interpreter contract is CPython 3.12+ with no upper bound; versions 3.12, 3.13, and 3.14 are the required v1.0 validation targets. Linux, macOS, and alternative Python implementations remain unsupported and unverified.
+ForgePy v1.0 officially supports Windows 10, Windows 11, and Linux on CPython. The supported interpreter contract is CPython 3.12+ with no upper bound; versions 3.12, 3.13, and 3.14 are the required v1.0 validation targets. macOS and alternative Python implementations remain unsupported and unverified.
 
-The current implementation uses Windows executable paths such as `.venv/Scripts/python.exe` and `.venv/Scripts/pip.exe`, Windows destination-name semantics, and Windows-specific virtual-environment paths in generated VS Code configuration. This explicit support contract does not add a runtime platform guard: metadata and documentation describe the supported environment, while non-Windows execution remains outside the v1.0 contract.
+Virtual-environment executable resolution is platform-aware: Windows uses `.venv/Scripts/python.exe`, while POSIX systems use `.venv/bin/python`. Requirements installation runs through that interpreter with `python -m pip`, and generated VS Code configuration uses the same platform-aware interpreter path. Project destination names intentionally retain Windows-compatible filename and reserved-name semantics so generated projects remain portable across supported Windows and Linux environments.
 
-Repository CI is defined separately in `.github/workflows/ci.yml`. Its passing `windows-latest` matrix covers CPython 3.12, 3.13, and 3.14; every matrix entry runs the full unit suite, `compileall`, and the focused packaging/support tests. The Python 3.12 entry additionally builds and inspects the wheel and sdist, installs the wheel in an isolated runner environment, and exercises the installed CLI from outside the checkout. The richer repository workflow does not change the minimal `github-actions` component generated into user projects.
+Repository CI is defined separately in `.github/workflows/ci.yml`. Its `windows-latest` and `ubuntu-latest` matrix covers CPython 3.12, 3.13, and 3.14; every matrix entry runs the full unit suite, `compileall`, and the focused packaging/support tests. The Python 3.12 entries additionally build and inspect the wheel and sdist, install the wheel in an isolated runner environment, and exercise the installed CLI from outside the checkout. A full project-creation smoke test has also completed successfully on CachyOS Linux. The richer repository workflow does not change the minimal `github-actions` component generated into user projects.
 
 ## Known limitations and technical debt
 
-- The full generation lifecycle is supported only on Windows 10 and Windows 11 and assumes Windows `.venv/Scripts/*.exe` paths. The repository's Python 3.12-3.14 GitHub matrix currently passes; native client smoke validation remains distinct.
-- GitHub's `windows-latest` runner validates Windows runner compatibility; it does not literally validate both Windows 10 and Windows 11 client editions. Native client smoke validation may remain a release-stage manual check.
+- The full generation lifecycle is supported on Windows and Linux with platform-aware virtual-environment paths. The repository's Python 3.12-3.14 matrix covers `windows-latest` and `ubuntu-latest`, and a full native project-creation smoke test has passed on CachyOS Linux. macOS remains unsupported and unverified.
+- GitHub-hosted runners validate their hosted Windows and Ubuntu environments; they do not literally validate every Windows edition or Linux distribution. Additional native-platform smoke validation may remain a release-stage manual check.
 - Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.

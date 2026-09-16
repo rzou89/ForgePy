@@ -173,14 +173,15 @@ class PackagingMetadataTests(unittest.TestCase):
             }.issubset(project["classifiers"])
         )
 
-    def test_support_metadata_declares_only_windows(self) -> None:
+    def test_support_metadata_declares_windows_and_linux(self) -> None:
         project = self.metadata["project"]
         classifiers = project["classifiers"]
 
         self.assertIn("Operating System :: Microsoft :: Windows", classifiers)
+        self.assertIn("Operating System :: POSIX :: Linux", classifiers)
         self.assertFalse(
             any(
-                "MacOS" in classifier or "POSIX :: Linux" in classifier
+                "MacOS" in classifier
                 for classifier in classifiers
             )
         )
@@ -206,11 +207,11 @@ class PackagingMetadataTests(unittest.TestCase):
                 normalized_document = document.casefold()
 
                 self.assertIn("officially supports windows", normalized_document)
+                self.assertIn("linux", normalized_document)
                 self.assertIn("cpython 3.12+", normalized_document)
                 for python_version in ("3.12", "3.13", "3.14"):
                     self.assertIn(python_version, normalized_document)
-                for unsupported_platform in ("linux", "macos"):
-                    self.assertIn(unsupported_platform, normalized_document)
+                self.assertIn("macos", normalized_document)
                 self.assertTrue(
                     "unsupported" in normalized_document
                     or "unverified" in normalized_document

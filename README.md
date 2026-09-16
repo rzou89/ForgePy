@@ -1,6 +1,6 @@
 # ForgePy
 
-ForgePy is a Windows-focused command-line tool that creates structured Python projects and prepares their development tooling.
+ForgePy is a cross-platform command-line tool for Windows and Linux that creates structured Python projects and prepares their development tooling.
 
 ## What ForgePy Does
 
@@ -8,13 +8,13 @@ ForgePy generates a project from one of its built-in templates, creates a virtua
 
 ## Requirements
 
-- Windows 10 or Windows 11
+- Windows 10 or Windows 11, or Linux
 - CPython 3.12 or newer
 - Git, required for project creation and configured with the user name and email needed to create a commit
 
-Other operating systems and alternative Python implementations are not officially supported for ForgePy v1.0.
+ForgePy v1.0 officially supports Windows and Linux on CPython. macOS and alternative Python implementations remain unsupported and unverified.
 
-Repository CI tests ForgePy on GitHub-hosted `windows-latest` runners using CPython 3.12, 3.13, and 3.14. This verifies compatibility with the hosted Windows environment; it does not literally test native Windows 10 and Windows 11 client installations.
+Repository CI tests ForgePy on GitHub-hosted `windows-latest` and `ubuntu-latest` runners using CPython 3.12, 3.13, and 3.14. A full project-creation smoke test has also been completed successfully on CachyOS Linux. Hosted runner coverage does not literally test every Windows edition or Linux distribution.
 
 ## Installation
 
@@ -49,11 +49,20 @@ forgepy version
 forgepy list
 ```
 
-Create a basic project below an existing parent directory:
+Create a basic project below an existing parent directory.
+
+Windows PowerShell:
 
 ```powershell
 forgepy create MyProject --location C:\Projects --template basic
 cd C:\Projects\MyProject
+```
+
+Linux:
+
+```bash
+forgepy create MyProject --location ~/Projects --template basic
+cd ~/Projects/MyProject
 ```
 
 The destination must not already exist. Omitting the project name or location starts the corresponding prompt; an omitted template uses the configured default and then falls back to `basic`.
@@ -76,12 +85,12 @@ Available components are:
 - `ruff` - adds `ruff.toml`.
 - `github-actions` - adds a minimal `.github/workflows/ci.yml` for the generated project.
 
-Use the verified component commands:
+Use the verified component commands from inside an existing project:
 
-```powershell
+```text
 forgepy component list
-forgepy component add pytest --project C:\Projects\MyProject
-forgepy component installed --project C:\Projects\MyProject
+forgepy component add pytest --project .
+forgepy component installed --project .
 ```
 
 Component installation refuses an owned target that already exists. The generated-project `github-actions` component is separate from ForgePy's own repository CI workflow.
@@ -90,10 +99,10 @@ Component installation refuses an owned target that already exists. The generate
 
 ForgePy stores user configuration under `~/.forgepy/config.json`. Supported settings are `default_template`, `default_location`, `author`, and `license`.
 
-```powershell
+```text
 forgepy config show
 forgepy config set default_template library
-forgepy config set default_location C:\Projects
+forgepy config set default_location <projects-directory>
 forgepy config reset
 ```
 
@@ -137,7 +146,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q components cli templates core config builders models tests
 ```
 
-Repository CI runs the test suite, compilation check, and packaging/support tests on `windows-latest` with CPython 3.12, 3.13, and 3.14. Its Python 3.12 job also builds and inspects the wheel and sdist, installs the wheel in isolation, and exercises the installed CLI.
+Repository CI runs the test suite, compilation check, and packaging/support tests on both `windows-latest` and `ubuntu-latest` with CPython 3.12, 3.13, and 3.14. The Python 3.12 jobs also build and inspect the wheel and sdist, install the wheel in isolation, and exercise the installed CLI.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for repository workflow and review expectations.
 
