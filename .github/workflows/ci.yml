@@ -10,10 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
         python-version:
           - "3.12"
           - "3.13"
@@ -46,9 +50,9 @@ jobs:
 
       - name: Inspect wheel and sdist
         if: matrix.python-version == '3.12'
-        shell: pwsh
+        shell: bash
         run: |
-          @'
+          python - <<'PY'
           import email
           import tarfile
           import zipfile
@@ -59,6 +63,7 @@ jobs:
           dist_path = Path("dist")
           wheels = tuple(dist_path.glob("*.whl"))
           sdists = tuple(dist_path.glob("*.tar.gz"))
+
           assert len(wheels) == 1, wheels
           assert len(sdists) == 1, sdists
 
@@ -75,106 +80,163 @@ jobs:
 
           with zipfile.ZipFile(wheels[0]) as wheel:
               wheel_names = set(wheel.namelist())
-              wheel_roots = {name.split("/", 1)[0] for name in wheel_names}
-              assert required_roots <= wheel_roots, required_roots - wheel_roots
+              wheel_roots = {
+                  name.split("/", 1)[0]
+                  for name in wheel_names
+              }
+
+              assert required_roots <= wheel_roots, (
+                  required_roots - wheel_roots
+              )
+
               assert "cli/commands/__init__.py" in wheel_names
               assert "tests" not in wheel_roots
               assert "utils" not in wheel_roots
 
               metadata_name = next(
-                  name for name in wheel_names if name.endswith(".dist-info/METADATA")
+                  name
+                  for name in wheel_names
+                  if name.endswith(".dist-info/METADATA")
               )
-              metadata = email.message_from_bytes(wheel.read(metadata_name))
+
+              metadata = email.message_from_bytes(
+                  wheel.read(metadata_name)
+              )
+
               assert metadata["Version"] == VERSION
-              assert metadata["Description-Content-Type"] == "text/markdown"
+              assert (
+                  metadata["Description-Content-Type"]
+                  == "text/markdown"
+              )
               assert metadata["License-Expression"] == "MIT"
               assert metadata["License-File"] == "LICENSE"
 
               license_name = next(
                   name
                   for name in wheel_names
-                  if name.endswith(".dist-info/licenses/LICENSE")
+                  if name.endswith(
+                      ".dist-info/licenses/LICENSE"
+                  )
               )
-              assert wheel.read(license_name).startswith(b"MIT License")
+
+              assert wheel.read(license_name).startswith(
+                  b"MIT License"
+              )
 
               entry_points_name = next(
                   name
                   for name in wheel_names
-                  if name.endswith(".dist-info/entry_points.txt")
+                  if name.endswith(
+                      ".dist-info/entry_points.txt"
+                  )
               )
-              entry_points = wheel.read(entry_points_name).decode("utf-8")
+
+              entry_points = wheel.read(
+                  entry_points_name
+              ).decode("utf-8")
+
               assert "forgepy = main:main" in entry_points
 
           with tarfile.open(sdists[0], "r:gz") as sdist:
               sdist_names = set(sdist.getnames())
+
               relative_names = {
                   name.split("/", 1)[1]
                   for name in sdist_names
                   if "/" in name
               }
+
               sdist_roots = {
-                  name.split("/", 1)[0] for name in relative_names
+                  name.split("/", 1)[0]
+                  for name in relative_names
               }
-              assert required_roots <= sdist_roots, required_roots - sdist_roots
+
+              assert required_roots <= sdist_roots, (
+                  required_roots - sdist_roots
+              )
+
               assert "pyproject.toml" in relative_names
               assert "README.md" in relative_names
               assert "CHANGELOG.md" in relative_names
               assert "LICENSE" in relative_names
               assert "cli/commands/__init__.py" in relative_names
+
               assert "tests" not in sdist_roots
               assert "utils" not in sdist_roots
 
               pkg_info_name = next(
                   name
                   for name in sdist_names
-                  if name.count("/") == 1 and name.endswith("/PKG-INFO")
+                  if name.count("/") == 1
+                  and name.endswith("/PKG-INFO")
               )
+
+              pkg_info_file = sdist.extractfile(
+                  pkg_info_name
+              )
+
+              assert pkg_info_file is not None
+
               pkg_info = email.message_from_bytes(
-                  sdist.extractfile(pkg_info_name).read()
+                  pkg_info_file.read()
               )
+
               assert pkg_info["Version"] == VERSION
-              assert pkg_info["Description-Content-Type"] == "text/markdown"
+              assert (
+                  pkg_info["Description-Content-Type"]
+                  == "text/markdown"
+              )
               assert pkg_info["License-Expression"] == "MIT"
               assert pkg_info["License-File"] == "LICENSE"
-          '@ | python -
+          PY
 
       - name: Install wheel and validate installed CLI
         if: matrix.python-version == '3.12'
-        shell: pwsh
+        shell: bash
         run: |
-          $expectedVersion = python -c "from config.version import VERSION; print(VERSION)"
-          $wheel = Get-ChildItem -Path dist -Filter *.whl -File -ErrorAction Stop
-          if ($wheel.Count -ne 1) {
-              throw "Expected exactly one wheel, found $($wheel.Count)."
-          }
+          expected_version="$(
+              python -c "from config.version import VERSION; print(VERSION)"
+          )"
 
-          $validationRoot = Join-Path $env:RUNNER_TEMP "forgepy-installed"
-          python -m venv $validationRoot
-          if ($LASTEXITCODE -ne 0) { throw "Failed to create validation environment." }
+          wheel="$(
+              python -c "
+          from pathlib import Path
+          wheels = tuple(Path('dist').glob('*.whl'))
+          assert len(wheels) == 1, wheels
+          print(wheels[0])
+          "
+          )"
 
-          $validationPython = Join-Path $validationRoot "Scripts/python.exe"
-          $forgepy = Join-Path $validationRoot "Scripts/forgepy.exe"
-          & $validationPython -m pip install $wheel.FullName --no-deps
-          if ($LASTEXITCODE -ne 0) { throw "Failed to install built wheel." }
+          validation_root=".ci-venv"
 
-          Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
-          Push-Location $env:RUNNER_TEMP
-          try {
-              & $forgepy --help
-              if ($LASTEXITCODE -ne 0) { throw "Installed help command failed." }
+          python -m venv "$validation_root"
 
-              $versionOutput = & $forgepy version
-              if ($LASTEXITCODE -ne 0) { throw "Installed version command failed." }
-              if ($versionOutput -notcontains "ForgePy v$expectedVersion") {
-                  throw "Installed ForgePy reported an unexpected version."
-              }
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+              validation_python="$validation_root/Scripts/python.exe"
+              forgepy="$validation_root/Scripts/forgepy.exe"
+          else
+              validation_python="$validation_root/bin/python"
+              forgepy="$validation_root/bin/forgepy"
+          fi
 
-              & $forgepy list
-              if ($LASTEXITCODE -ne 0) { throw "Installed list command failed." }
+          "$validation_python" -m pip install "$wheel" --no-deps
 
-              & $forgepy component list
-              if ($LASTEXITCODE -ne 0) { throw "Installed component list failed." }
-          }
-          finally {
-              Pop-Location
-          }
+          unset PYTHONPATH
+
+          mkdir -p .ci-smoke
+          pushd .ci-smoke
+
+          "../$forgepy" --help
+
+          version_output="$("../$forgepy" version)"
+
+          if [[ "$version_output" != *"ForgePy v$expected_version"* ]]; then
+              echo "Unexpected ForgePy version:"
+              echo "$version_output"
+              exit 1
+          fi
+
+          "../$forgepy" list
+          "../$forgepy" component list
+
+          popd
