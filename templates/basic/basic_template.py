@@ -20,6 +20,14 @@ class BasicTemplate(FileTemplate):
         version="0.6.0",
         author="Rendy Zou",
         tags=("python", "basic"),
+        display_name="General Application",
+        use_cases=(
+            "desktop application",
+            "GUI",
+            "data processing",
+            "Excel/reporting",
+            "general business application",
+        ),
     )
 
     _DEFAULT_VSCODE_ENTRY_POINT = "app.py"

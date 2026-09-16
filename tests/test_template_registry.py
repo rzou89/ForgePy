@@ -82,9 +82,21 @@ class TemplateMetadataTests(unittest.TestCase):
                 version="0.6.0",
                 author="Rendy Zou",
                 tags=("python", "basic"),
+                display_name="General Application",
+                use_cases=(
+                    "desktop application",
+                    "GUI",
+                    "data processing",
+                    "Excel/reporting",
+                    "general business application",
+                ),
             ),
         )
         self.assertEqual(template.name, template.metadata.name)
+        self.assertEqual(
+            template.metadata.friendly_name,
+            "General Application",
+        )
 
     def test_metadata_is_immutable(self) -> None:
         metadata = BasicTemplate().metadata
@@ -106,6 +118,38 @@ class TemplateMetadataTests(unittest.TestCase):
 
         self.assertEqual(metadata.tags, ("python",))
 
+    def test_metadata_normalizes_use_cases_to_an_immutable_tuple(self) -> None:
+        source_use_cases = ["automation"]
+        metadata = TemplateMetadata(
+            name="example",
+            description="Example template.",
+            version="1.0.0",
+            author="Example Author",
+            tags=("example",),
+            use_cases=source_use_cases,  # type: ignore[arg-type]
+        )
+
+        source_use_cases.append("changed")
+
+        self.assertEqual(
+            metadata.use_cases,
+            ("automation",),
+        )
+
+    def test_metadata_uses_name_as_friendly_name_by_default(self) -> None:
+        metadata = TemplateMetadata(
+            name="example",
+            description="Example template.",
+            version="1.0.0",
+            author="Example Author",
+            tags=("example",),
+        )
+
+        self.assertEqual(
+            metadata.friendly_name,
+            "example",
+        )
+
     def test_metadata_rejects_a_string_as_tags(self) -> None:
         with self.assertRaisesRegex(
             TypeError,
@@ -117,6 +161,20 @@ class TemplateMetadataTests(unittest.TestCase):
                 version="1.0.0",
                 author="Example Author",
                 tags="python",  # type: ignore[arg-type]
+            )
+
+    def test_metadata_rejects_a_string_as_use_cases(self) -> None:
+        with self.assertRaisesRegex(
+            TypeError,
+            "iterable of strings",
+        ):
+            TemplateMetadata(
+                name="example",
+                description="Example template.",
+                version="1.0.0",
+                author="Example Author",
+                tags=("example",),
+                use_cases="automation",  # type: ignore[arg-type]
             )
 
     def test_metadata_rejects_empty_names(self) -> None:
@@ -134,6 +192,22 @@ class TemplateMetadataTests(unittest.TestCase):
                         tags=(),
                     )
 
+    def test_metadata_rejects_empty_display_name(self) -> None:
+        for display_name in ("", "   "):
+            with self.subTest(display_name=display_name):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "display_name must not be empty",
+                ):
+                    TemplateMetadata(
+                        name="example",
+                        description="Example template.",
+                        version="1.0.0",
+                        author="Example Author",
+                        tags=(),
+                        display_name=display_name,
+                    )
+
     def test_legacy_template_receives_compatibility_metadata(self) -> None:
         metadata = LegacyTemplate().metadata
 
@@ -142,6 +216,9 @@ class TemplateMetadataTests(unittest.TestCase):
         self.assertEqual(metadata.version, "")
         self.assertEqual(metadata.author, "")
         self.assertEqual(metadata.tags, ())
+        self.assertIsNone(metadata.display_name)
+        self.assertEqual(metadata.use_cases, ())
+        self.assertEqual(metadata.friendly_name, "legacy")
 
     def test_legacy_template_preflight_is_harmless(self) -> None:
         self.assertIsNone(LegacyTemplate().preflight(Path("LegacyProject")))

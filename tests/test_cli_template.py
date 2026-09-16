@@ -28,9 +28,22 @@ class CliTemplateTests(unittest.TestCase):
                 version="0.1.0",
                 author="Rendy Zou",
                 tags=("python", "cli", "argparse"),
+                display_name="CLI / Automation / Backend Tool",
+                use_cases=(
+                    "automation",
+                    "trading bot",
+                    "scanner",
+                    "backend service",
+                    "scheduled jobs",
+                    "API clients",
+                ),
             ),
         )
         self.assertEqual(template.name, "cli")
+        self.assertEqual(
+            template.metadata.friendly_name,
+            "CLI / Automation / Backend Tool",
+        )
 
     def test_default_registry_registers_cli_after_existing_templates(
         self,

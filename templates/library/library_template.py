@@ -23,6 +23,13 @@ class LibraryTemplate(FileTemplate):
         version="0.1.0",
         author="Rendy Zou",
         tags=("python", "library", "package"),
+        display_name="Python Library",
+        use_cases=(
+            "reusable Python package",
+            "SDK",
+            "internal library",
+            "module used by other projects",
+        ),
     )
 
     _DEFAULT_VSCODE_ENTRY_POINT = None

@@ -27,9 +27,20 @@ class LibraryTemplateTests(unittest.TestCase):
                 version="0.1.0",
                 author="Rendy Zou",
                 tags=("python", "library", "package"),
+                display_name="Python Library",
+                use_cases=(
+                    "reusable Python package",
+                    "SDK",
+                    "internal library",
+                    "module used by other projects",
+                ),
             ),
         )
         self.assertEqual(template.name, "library")
+        self.assertEqual(
+            template.metadata.friendly_name,
+            "Python Library",
+        )
 
     def test_default_registry_registers_library_after_basic(self) -> None:
         registry = TemplateRegistry()
