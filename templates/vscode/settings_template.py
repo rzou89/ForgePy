@@ -11,11 +11,15 @@ Deskripsi:
 
 import json
 
+from core.venv_paths import get_venv_python_relative_path
+
 
 def build() -> str:
 
+    interpreter_path = get_venv_python_relative_path().as_posix()
+
     settings = {
-        "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
+        "python.defaultInterpreterPath": interpreter_path,
 
         "python.analysis.typeCheckingMode": "basic",
 
@@ -31,7 +35,7 @@ def build() -> str:
     }
 
     return json.dumps(
-    settings,
-    indent=4,
-    ensure_ascii=False,
-)
+        settings,
+        indent=4,
+        ensure_ascii=False,
+    )

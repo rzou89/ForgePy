@@ -1,6 +1,8 @@
 import subprocess
 from pathlib import Path
 
+from core.venv_paths import get_venv_python
+
 
 REQUIREMENTS_INSTALL_TIMEOUT_SECONDS = 900
 
@@ -21,12 +23,15 @@ class RequirementsInstaller:
 
         # Jika requirements.txt kosong
         if requirements.read_text(encoding="utf-8").strip() == "":
-            print("[INFO] requirements.txt kosong, tidak ada dependency yang di-install.")
+            print(
+                "[INFO] requirements.txt kosong, "
+                "tidak ada dependency yang di-install."
+            )
             return
 
-        pip = project_path / ".venv" / "Scripts" / "pip.exe"
+        python = get_venv_python(project_path)
 
-        if not pip.exists():
+        if not python.exists():
             print("[WARNING] Virtual Environment belum tersedia.")
             return
 
@@ -35,7 +40,9 @@ class RequirementsInstaller:
         try:
             subprocess.run(
                 [
-                    str(pip),
+                    str(python),
+                    "-m",
+                    "pip",
                     "install",
                     "-r",
                     str(requirements),

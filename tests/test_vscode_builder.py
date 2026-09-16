@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from core.project_generator import ProjectGenerator
+from core.venv_paths import get_venv_python_relative_path
 from core.vscode_builder import VSCodeBuilder
 from templates.basic.basic_template import BasicTemplate
 from templates.library.library_template import LibraryTemplate
@@ -21,11 +22,18 @@ class VSCodeBuilderTests(unittest.TestCase):
         "tasks.json",
     }
 
+    _WORKSPACE_PYTHON = (
+        f"${{workspaceFolder}}/"
+        f"{get_venv_python_relative_path().as_posix()}"
+    )
+
     _INSTALL_REQUIREMENTS_TASK = {
         "label": "Install Requirements",
         "type": "shell",
-        "command": "${workspaceFolder}\\.venv\\Scripts\\pip.exe",
+        "command": _WORKSPACE_PYTHON,
         "args": [
+            "-m",
+            "pip",
             "install",
             "-r",
             "requirements.txt",
@@ -69,19 +77,22 @@ class VSCodeBuilderTests(unittest.TestCase):
                 "app.py",
             )
             self.assertTrue((project_root / "app.py").is_file())
+
             self.assertEqual(
                 configuration["launch.json"],
                 self._basic_launch_configuration(),
             )
+
             self.assertEqual(
                 configuration["tasks.json"],
                 self._basic_task_configuration(),
             )
+
             self.assertEqual(
                 configuration["settings.json"],
                 {
                     "python.defaultInterpreterPath": (
-                        ".venv\\Scripts\\python.exe"
+                        get_venv_python_relative_path().as_posix()
                     ),
                     "python.analysis.typeCheckingMode": "basic",
                     "python.analysis.autoImportCompletions": True,
@@ -91,6 +102,7 @@ class VSCodeBuilderTests(unittest.TestCase):
                     "files.insertFinalNewline": True,
                 },
             )
+
             self.assertEqual(
                 configuration["extensions.json"],
                 {
@@ -118,6 +130,7 @@ class VSCodeBuilderTests(unittest.TestCase):
 
             self.assertIsNone(LibraryTemplate().vscode_entry_point)
             self.assertFalse((project_root / "app.py").exists())
+
             self.assertEqual(
                 configuration["launch.json"],
                 {
@@ -125,6 +138,7 @@ class VSCodeBuilderTests(unittest.TestCase):
                     "configurations": [],
                 },
             )
+
             self.assertEqual(
                 configuration["tasks.json"],
                 {
@@ -134,7 +148,10 @@ class VSCodeBuilderTests(unittest.TestCase):
                     ],
                 },
             )
-            self.assertTrue((project_root / "requirements.txt").is_file())
+
+            self.assertTrue(
+                (project_root / "requirements.txt").is_file()
+            )
 
             vscode_text = "\n".join(
                 path.read_text(encoding="utf-8")
@@ -152,10 +169,14 @@ class VSCodeBuilderTests(unittest.TestCase):
                 project_name="Demo-CLI",
                 template_name="cli",
             )
+
             configuration = self._load_configuration(project_root)
             entry_point = "demo_cli/cli.py"
 
-            self.assertTrue((project_root / entry_point).is_file())
+            self.assertTrue(
+                (project_root / entry_point).is_file()
+            )
+
             self.assertEqual(
                 configuration["launch.json"],
                 {
@@ -175,6 +196,7 @@ class VSCodeBuilderTests(unittest.TestCase):
                     ],
                 },
             )
+
             self.assertEqual(
                 configuration["tasks.json"],
                 {
@@ -183,10 +205,7 @@ class VSCodeBuilderTests(unittest.TestCase):
                         {
                             "label": "Run Application",
                             "type": "shell",
-                            "command": (
-                                "${workspaceFolder}\\.venv\\Scripts\\"
-                                "python.exe"
-                            ),
+                            "command": self._WORKSPACE_PYTHON,
                             "args": [
                                 entry_point,
                             ],
@@ -218,28 +237,35 @@ class VSCodeBuilderTests(unittest.TestCase):
         project_name: str,
         template_name: str,
     ) -> Path:
+
         with ExitStack() as stack:
             stack.enter_context(
                 patch(
                     "core.project_generator.EnvironmentBuilder.create",
                 )
             )
+
             stack.enter_context(
                 patch(
                     "core.project_generator.PythonToolsBuilder.update",
                 )
             )
+
             stack.enter_context(
                 patch(
                     "core.project_generator.RequirementsInstaller.install",
                 )
             )
+
             stack.enter_context(
                 patch(
                     "core.project_generator.GitBuilder.create",
                 )
             )
-            stack.enter_context(redirect_stdout(StringIO()))
+
+            stack.enter_context(
+                redirect_stdout(StringIO())
+            )
 
             ProjectGenerator().create(
                 project_name=project_name,
@@ -253,7 +279,9 @@ class VSCodeBuilderTests(unittest.TestCase):
         self,
         project_root: Path,
     ) -> dict[str, object]:
+
         vscode_folder = project_root / ".vscode"
+
         paths = {
             path.name: path
             for path in vscode_folder.iterdir()
@@ -266,11 +294,16 @@ class VSCodeBuilderTests(unittest.TestCase):
         )
 
         return {
-            filename: json.loads(path.read_text(encoding="utf-8"))
+            filename: json.loads(
+                path.read_text(encoding="utf-8")
+            )
             for filename, path in paths.items()
         }
 
-    def _basic_launch_configuration(self) -> dict[str, object]:
+    def _basic_launch_configuration(
+        self,
+    ) -> dict[str, object]:
+
         return {
             "version": "0.2.0",
             "configurations": [
@@ -285,16 +318,17 @@ class VSCodeBuilderTests(unittest.TestCase):
             ],
         }
 
-    def _basic_task_configuration(self) -> dict[str, object]:
+    def _basic_task_configuration(
+        self,
+    ) -> dict[str, object]:
+
         return {
             "version": "2.0.0",
             "tasks": [
                 {
                     "label": "Run Application",
                     "type": "shell",
-                    "command": (
-                        "${workspaceFolder}\\.venv\\Scripts\\python.exe"
-                    ),
+                    "command": self._WORKSPACE_PYTHON,
                     "args": [
                         "app.py",
                     ],
