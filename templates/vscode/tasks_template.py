@@ -12,8 +12,13 @@ Deskripsi:
 
 import json
 
+from core.venv_paths import get_venv_python_relative_path
+
 
 def build(entry_point: str | None = "app.py") -> str:
+
+    python_path = get_venv_python_relative_path().as_posix()
+    workspace_python = f"${{workspaceFolder}}/{python_path}"
 
     tasks = []
 
@@ -22,7 +27,7 @@ def build(entry_point: str | None = "app.py") -> str:
             {
                 "label": "Run Application",
                 "type": "shell",
-                "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+                "command": workspace_python,
                 "args": [
                     entry_point
                 ],
@@ -41,8 +46,10 @@ def build(entry_point: str | None = "app.py") -> str:
         {
             "label": "Install Requirements",
             "type": "shell",
-            "command": "${workspaceFolder}\\.venv\\Scripts\\pip.exe",
+            "command": workspace_python,
             "args": [
+                "-m",
+                "pip",
                 "install",
                 "-r",
                 "requirements.txt"

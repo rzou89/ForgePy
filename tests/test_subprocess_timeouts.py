@@ -29,6 +29,7 @@ from core.requirements_installer import (
     REQUIREMENTS_INSTALL_TIMEOUT_SECONDS,
     RequirementsInstaller,
 )
+from core.venv_paths import get_venv_python
 
 
 class LifecycleSubprocessTimeoutTests(unittest.TestCase):
@@ -57,7 +58,7 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             project_root = Path(temporary_directory)
-            python = project_root / ".venv/Scripts/python.exe"
+            python = get_venv_python(project_root)
             python.parent.mkdir(parents=True)
             python.touch()
 
@@ -86,9 +87,9 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
                 "example\n",
                 encoding="utf-8",
             )
-            pip = project_root / ".venv/Scripts/pip.exe"
-            pip.parent.mkdir(parents=True)
-            pip.touch()
+            python = get_venv_python(project_root)
+            python.parent.mkdir(parents=True)
+            python.touch()
 
             with patch(
                 "core.requirements_installer.subprocess.run",
