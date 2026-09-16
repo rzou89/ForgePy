@@ -17,6 +17,8 @@ class TemplateMetadata:
     version: str
     author: str
     tags: tuple[str, ...]
+    display_name: str | None = None
+    use_cases: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         for field_name in (
@@ -35,6 +37,17 @@ class TemplateMetadata:
                 "Template metadata name must not be empty."
             )
 
+        if self.display_name is not None:
+            if not isinstance(self.display_name, str):
+                raise TypeError(
+                    "Template metadata display_name must be a string or None."
+                )
+
+            if not self.display_name.strip():
+                raise ValueError(
+                    "Template metadata display_name must not be empty."
+                )
+
         if isinstance(self.tags, (str, bytes)):
             raise TypeError(
                 "Template metadata tags must be an iterable of strings."
@@ -52,8 +65,39 @@ class TemplateMetadata:
                 "Template metadata tags must contain only strings."
             )
 
+        if isinstance(self.use_cases, (str, bytes)):
+            raise TypeError(
+                "Template metadata use_cases must be an iterable of strings."
+            )
+
+        try:
+            normalized_use_cases = tuple(self.use_cases)
+        except TypeError as error:
+            raise TypeError(
+                "Template metadata use_cases must be an iterable of strings."
+            ) from error
+
+        if not all(
+            isinstance(use_case, str)
+            for use_case in normalized_use_cases
+        ):
+            raise TypeError(
+                "Template metadata use_cases must contain only strings."
+            )
+
         object.__setattr__(
             self,
             "tags",
             normalized_tags,
         )
+        object.__setattr__(
+            self,
+            "use_cases",
+            normalized_use_cases,
+        )
+
+    @property
+    def friendly_name(self) -> str:
+        """Return the user-facing template name."""
+
+        return self.display_name or self.name

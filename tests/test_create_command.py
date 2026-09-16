@@ -155,7 +155,7 @@ class CreateCommandConfigTests(unittest.TestCase):
             template_name="stored-template",
         )
 
-    def test_no_command_preserves_project_and_location_prompts(
+    def test_no_command_opens_interactive_project_wizard(
         self,
     ) -> None:
         commands = tuple(
@@ -175,6 +175,8 @@ class CreateCommandConfigTests(unittest.TestCase):
                 side_effect=[
                     "Prompted Project",
                     "D:/Prompted",
+                    "1",
+                    "y",
                 ],
             ) as prompt:
                 with patch(
@@ -184,7 +186,10 @@ class CreateCommandConfigTests(unittest.TestCase):
                         args = Parser(
                             commands=commands,
                         ).parse()
+
+                        self.assertIsNone(args.command)
                         self.assertIsNone(args.template)
+
                         Dispatcher(
                             commands=commands,
                         ).dispatch(args)
@@ -193,15 +198,251 @@ class CreateCommandConfigTests(unittest.TestCase):
             [
                 call("Project Name : "),
                 call("Location : "),
+                call("Select template [0-3]: "),
+                call("Create this project? [Y/n]: "),
             ]
         )
-        self.assertEqual(prompt.call_count, 2)
+        self.assertEqual(prompt.call_count, 4)
+
         generator.return_value.create.assert_called_once_with(
             project_name="Prompted Project",
             location="D:/Prompted",
             template_name="basic",
         )
+
+        wizard_output = output.getvalue()
+
+        self.assertIn(
+            "FORGEPY PROJECT WIZARD",
+            wizard_output,
+        )
+        self.assertIn(
+            "[1] General Application",
+            wizard_output,
+        )
+        self.assertIn(
+            "[2] CLI / Automation / Backend Tool",
+            wizard_output,
+        )
+        self.assertIn(
+            "[3] Python Library",
+            wizard_output,
+        )
+        self.assertIn(
+            "CONFIRMATION",
+            wizard_output,
+        )
         self.assertFalse(self.store.config_directory.exists())
+
+    def test_interactive_basic_selection_works(self) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=(
+                "1",
+                "y",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+        prompt.assert_has_calls(
+            [
+                call("Select template [0-3]: "),
+                call("Create this project? [Y/n]: "),
+            ]
+        )
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="basic",
+        )
+        self.assertIn(
+            "Template : General Application",
+            output,
+        )
+
+    def test_interactive_cli_selection_works(self) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=(
+                "2",
+                "",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+        prompt.assert_has_calls(
+            [
+                call("Select template [0-3]: "),
+                call("Create this project? [Y/n]: "),
+            ]
+        )
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="cli",
+        )
+        self.assertIn(
+            "Template : CLI / Automation / Backend Tool",
+            output,
+        )
+
+    def test_interactive_library_selection_works(self) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=(
+                "3",
+                "yes",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+        prompt.assert_has_calls(
+            [
+                call("Select template [0-3]: "),
+                call("Create this project? [Y/n]: "),
+            ]
+        )
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="library",
+        )
+        self.assertIn(
+            "Template : Python Library",
+            output,
+        )
+
+    def test_interactive_invalid_template_selection_retries(
+        self,
+    ) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=(
+                "invalid",
+                "9",
+                "2",
+                "y",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+
+        self.assertEqual(
+            prompt.call_args_list,
+            [
+                call("Select template [0-3]: "),
+                call("Select template [0-3]: "),
+                call("Select template [0-3]: "),
+                call("Create this project? [Y/n]: "),
+            ],
+        )
+
+        self.assertEqual(
+            output.count("[ERROR] Invalid selection."),
+            2,
+        )
+
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="cli",
+        )
+
+    def test_interactive_zero_cancels_before_confirmation(
+        self,
+    ) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=("0",),
+        )
+
+        self.assertEqual(status, 0)
+        prompt.assert_called_once_with(
+            "Select template [0-3]: "
+        )
+        generator.assert_not_called()
+
+        self.assertIn(
+            "[INFO] Project creation cancelled.",
+            output,
+        )
+        self.assertNotIn(
+            "CONFIRMATION",
+            output,
+        )
+
+    def test_interactive_confirmation_yes_creates_project(
+        self,
+    ) -> None:
+        generator, prompt, _, status = self._execute_interactive(
+            prompt_values=(
+                "2",
+                "Y",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            prompt.call_args_list[-1],
+            call("Create this project? [Y/n]: "),
+        )
+
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="cli",
+        )
+
+    def test_interactive_confirmation_no_cancels_project(
+        self,
+    ) -> None:
+        generator, prompt, output, status = self._execute_interactive(
+            prompt_values=(
+                "3",
+                "n",
+            ),
+        )
+
+        self.assertEqual(status, 0)
+        self.assertEqual(
+            prompt.call_args_list[-1],
+            call("Create this project? [Y/n]: "),
+        )
+        generator.assert_not_called()
+
+        self.assertIn(
+            "[INFO] Project creation cancelled.",
+            output,
+        )
+
+    def test_advanced_cli_with_template_does_not_prompt(
+        self,
+    ) -> None:
+        args = Namespace(
+            command="create",
+            project_name="Example",
+            location="D:/Explicit",
+            template="cli",
+        )
+        output = StringIO()
+
+        with patch(
+            "builtins.input",
+        ) as prompt:
+            with patch(
+                "cli.commands.create_command.ProjectGenerator",
+            ) as generator:
+                with redirect_stdout(output):
+                    status = self.command.execute(args)
+
+        self.assertEqual(status, 0)
+        prompt.assert_not_called()
+
+        generator.return_value.create.assert_called_once_with(
+            project_name="Example",
+            location="D:/Explicit",
+            template_name="cli",
+        )
+
+        self.assertNotIn(
+            "FORGEPY PROJECT WIZARD",
+            output.getvalue(),
+        )
 
     def test_explicit_project_name_is_used_without_prompt(self) -> None:
         generator, prompt, _ = self._execute(
@@ -419,6 +660,38 @@ class CreateCommandConfigTests(unittest.TestCase):
                     self.command.execute(args)
 
         return generator, prompt, output.getvalue()
+
+    def _execute_interactive(
+        self,
+        *,
+        prompt_values: tuple[str, ...],
+        project_name: str = "Example",
+        location: str = "D:/Explicit",
+    ) -> tuple[MagicMock, MagicMock, str, int]:
+        args = Namespace(
+            command=None,
+            project_name=project_name,
+            location=location,
+            template=None,
+        )
+        output = StringIO()
+
+        with patch(
+            "builtins.input",
+            side_effect=prompt_values,
+        ) as prompt:
+            with patch(
+                "cli.commands.create_command.ProjectGenerator",
+            ) as generator:
+                with redirect_stdout(output):
+                    status = self.command.execute(args)
+
+        return (
+            generator,
+            prompt,
+            output.getvalue(),
+            status,
+        )
 
 
 if __name__ == "__main__":

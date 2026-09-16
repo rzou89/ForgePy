@@ -16,6 +16,15 @@ class CliTemplate(FileTemplate):
         version="0.1.0",
         author="Rendy Zou",
         tags=("python", "cli", "argparse"),
+        display_name="CLI / Automation / Backend Tool",
+        use_cases=(
+            "automation",
+            "trading bot",
+            "scanner",
+            "backend service",
+            "scheduled jobs",
+            "API clients",
+        ),
     )
 
     _DEFAULT_VSCODE_ENTRY_POINT = None
