@@ -4,13 +4,31 @@ This changelog records release-facing changes without assigning versions or date
 
 ## Unreleased
 
+### Added
+
+- Added Linux project-generation support alongside Windows, including
+  platform-aware virtual-environment interpreter paths and generated VS Code
+  configuration.
+- Expanded repository CI to validate `windows-latest` and `ubuntu-latest` on
+  CPython 3.12, 3.13, and 3.14; a full project-creation smoke test also passed
+  on CachyOS Linux.
+- Added Easy Mode for no-command startup, guiding users through project name,
+  location, registered template selection, confirmation, and creation.
+- Added user-facing template `display_name` and `use_cases` metadata for the
+  built-in `basic`, `cli`, and `library` templates.
+
 ### Changed
 
+- Kept explicit `create` usage as Advanced Mode. An explicit `--template`
+  bypasses the interactive template menu, while an omitted template retains
+  the existing configured-default and `basic` fallback behavior.
 - Prepared the first PyPI publication under the `forgepy-cli` distribution
   name while preserving the ForgePy application name, `forgepy` command, and
   canonical version `1.0.0`.
 - Updated current project URLs for `rzou89/ForgePy` and added a GitHub OIDC
   Trusted Publishing workflow. No PyPI publication has occurred.
+- Updated current project documentation to distinguish Easy Mode from Advanced
+  Mode and describe the post-v1.0 Windows/Linux support contract.
 
 ## 1.0.0
 
