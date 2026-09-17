@@ -138,9 +138,9 @@ metadata classifies the prepared `1.0.0` release as
 uses the SPDX expression `MIT` and includes the root `LICENSE` file through
 PEP 639 metadata. No legacy license classifier is used.
 
-The current application version is `1.1.0` on the release-preparation branch, while the `v1.0.0` Git tag and GitHub
+The current application version is `1.1.0`, and the `v1.1.0` Git tag and GitHub
 Release exist. The version remains dynamically sourced from
-`config.version.VERSION`. `forgepy-cli` 1.0.0 is already published on PyPI; publication of 1.1.0 is still pending.
+`config.version.VERSION`. `forgepy-cli` 1.1.0 is published on PyPI.
 
 `.github/workflows/publish.yml` builds a fresh wheel and sdist in an unprivileged
 job, transfers only those files as a workflow artifact, and publishes them in a
