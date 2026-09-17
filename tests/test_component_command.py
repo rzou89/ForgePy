@@ -534,8 +534,8 @@ class ComponentCommandTests(unittest.TestCase):
             ("create", "version", "list", "config", "component"),
         )
 
-    def test_forgepy_version_remains_unchanged(self) -> None:
-        self.assertEqual(VERSION, "1.0.0")
+    def test_forgepy_version_matches_release(self) -> None:
+        self.assertEqual(VERSION, "1.1.0")
 
     @staticmethod
     def _run_cli(

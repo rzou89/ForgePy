@@ -4,6 +4,10 @@ This changelog records release-facing changes without assigning versions or date
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 1.1.0
+
 ### Added
 
 - Added Linux project-generation support alongside Windows, including
@@ -22,24 +26,23 @@ This changelog records release-facing changes without assigning versions or date
 - Kept explicit `create` usage as Advanced Mode. An explicit `--template`
   bypasses the interactive template menu, while an omitted template retains
   the existing configured-default and `basic` fallback behavior.
-- Prepared the first PyPI publication under the `forgepy-cli` distribution
-  name while preserving the ForgePy application name, `forgepy` command, and
-  canonical version `1.0.0`.
-- Updated current project URLs for `rzou89/ForgePy` and added a GitHub OIDC
-  Trusted Publishing workflow. No PyPI publication has occurred.
+- Published ForgePy 1.0.0 to PyPI under the `forgepy-cli` distribution through
+  Trusted Publishing, establishing the public package distribution channel.
+- Updated current project URLs for `rzou89/ForgePy` and retained GitHub OIDC
+  Trusted Publishing for release publication.
 - Updated current project documentation to distinguish Easy Mode from Advanced
   Mode and describe the post-v1.0 Windows/Linux support contract.
 
 ## 1.0.0
 
 ForgePy 1.0.0 promotes the validated `1.0.0rc1` contents as the stable release
-without additional product changes. The `v1.0.0` tag and GitHub Release exist;
-no PyPI publication is claimed.
+without additional product changes. The `v1.0.0` tag and GitHub Release exist.
+The same 1.0.0 distribution was subsequently published to PyPI.
 
 ## 1.0.0rc1
 
 This is the first ForgePy v1.0 release candidate, not the final v1.0.0
-release. It has not been published to PyPI.
+release. It was not published to PyPI.
 
 ### Added
 
