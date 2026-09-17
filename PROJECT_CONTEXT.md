@@ -6,14 +6,14 @@
 * **Purpose:** generate structured Python projects through either a guided interactive wizard or explicit CLI arguments, then prepare their virtual environment, dependencies, VS Code configuration, and Git repository.
 * **Supported platforms:** Windows and Linux on CPython.
 * **Protected stable branch policy:** treat `master` as protected and stable.
-* **Current stable release/tag:** `v1.0.0`.
-* **Current development area:** ForgePy v1.1.0 release preparation.
+* **Current stable release/tag:** `v1.1.0`.
+* **Current development area:** post-v1.1.0 maintenance and incremental development.
 
-`config/version.py` is the canonical ForgePy version source and currently reports `1.1.0` for the release-preparation branch.
+`config/version.py` is the canonical ForgePy version source and currently reports `1.1.0`.
 
-The `v1.0.0` tag and GitHub stable release exist.
+The `v1.1.0` tag and GitHub stable release exist.
 
-ForgePy 1.0.0 is already published to PyPI under the distribution name `forgepy-cli`. The application remains branded **ForgePy**, the installed console command remains `forgepy`, and version 1.1.0 has not yet been published.
+ForgePy 1.1.0 is published to PyPI under the distribution name `forgepy-cli`. The application remains branded **ForgePy**, and the installed console command remains `forgepy`.
 
 ## ForgePy Philosophy
 
@@ -109,7 +109,7 @@ This separation preserves the existing automation-friendly CLI while allowing th
 ## Implemented capabilities
 
 * Publish release-facing `forgepy-cli` package metadata from `pyproject.toml`, including README long description, `rzou89/ForgePy` URLs, keywords, Production/Stable classification, and MIT License metadata.
-* Derive distribution version `1.1.0` dynamically from the canonical application version source on the current release-preparation branch.
+* Derive distribution version `1.1.0` dynamically from the canonical application version source.
 * Expose `main:main` as the installed `forgepy` console command.
 * Define repository CI on `windows-latest` and `ubuntu-latest` for CPython 3.12, 3.13, and 3.14.
 * Build and inspect distributions in CI, install the wheel in isolation, and probe the installed CLI.
@@ -255,7 +255,7 @@ The root `requirements.txt` remains empty because ForgePy itself has no third-pa
 
 ## Technical constraints
 
-* ForgePy v1.0 officially supports Windows 10, Windows 11, and Linux on CPython.
+* ForgePy officially supports Windows 10, Windows 11, and Linux on CPython.
 * The supported Python range is CPython 3.12+ without an upper bound.
 * CPython 3.12, 3.13, and 3.14 are the required current repository CI validation targets.
 * macOS and alternative Python implementations remain unsupported and unverified.
@@ -325,7 +325,7 @@ Hosted runner coverage does not literally validate every Windows edition or Linu
 * Continue expanding automated coverage for supported commands, lifecycle stages, and failure handling.
 * Keep repository CI green on Windows and Linux across the supported CPython matrix.
 * Keep the root MIT License, SPDX package metadata, and distributed license file aligned.
-* Complete the first deliberate PyPI publication when release preparation is approved.
+* Keep release tags, GitHub Releases, PyPI publication state, package metadata, and documentation synchronized.
 
 ## Post-v1.0 direction
 
@@ -350,17 +350,17 @@ Use this section as the handoff point for a new developer or AI session.
 
 | Item                          | Resume state                                                                                                    |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Stable baseline               | `v1.0.0` Git tag and GitHub Release                                                                             |
+| Stable baseline               | `v1.1.0` Git tag and GitHub Release                                                                             |
 | Current branch policy         | Treat `master` as protected; use a focused branch for changes                                                   |
-| Current maintenance area      | ForgePy v1.1.0 release preparation                                                                               |
+| Current maintenance area      | Post-v1.1.0 maintenance and incremental development                                                             |
 | Implemented interaction modes | Easy Mode interactive wizard and Advanced Mode CLI                                                              |
 | Implemented CLI               | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command Easy Mode |
 | Implemented templates         | `basic`, `library`, and `cli`                                                                                   |
 | Template UX metadata          | `display_name`, `description`, and `use_cases` are available through registered metadata                        |
 | Component state               | `pytest`, `ruff`, and `github-actions` built-ins with project-local installation state                          |
 | Distribution identity         | PyPI name `forgepy-cli`; application ForgePy; console command `forgepy`                                         |
-| Version source                | `config/version.py`, currently `1.1.0` on the release-preparation branch                                         |
-| Publishing state              | `forgepy-cli` 1.0.0 is published on PyPI; 1.1.0 publication is pending                                          |
+| Version source                | `config/version.py`, currently `1.1.0`                                                                          |
+| Publishing state              | `forgepy-cli` 1.1.0 is published on PyPI                                                                        |
 
 To resume work:
 

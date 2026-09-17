@@ -29,7 +29,7 @@ A successful project creation leaves the new project ready for development.
 * Git
 * Git user name and email configured for the initial commit
 
-ForgePy v1.0 officially supports Windows and Linux on CPython.
+ForgePy currently supports Windows and Linux on CPython.
 
 macOS and alternative Python implementations remain unsupported and unverified.
 
@@ -43,21 +43,19 @@ Packaging-tool updates and dependency installation may require network access du
 
 ## Installation
 
-ForgePy is prepared for PyPI publication under the distribution name:
+ForgePy is published on PyPI under the distribution name:
 
 ```text
 forgepy-cli
 ```
 
-After the first PyPI publication, installation will be:
+Install the current stable release with:
 
 ```bash
 python -m pip install forgepy-cli
 ```
 
-The first PyPI upload is still pending.
-
-Until publication is completed, install ForgePy from a source checkout:
+To install ForgePy from a source checkout instead:
 
 ```bash
 python -m pip install .
@@ -370,7 +368,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for repository workflow and review expect
 
 ## Current Status
 
-ForgePy v1.0.0 is the current stable Git tag and GitHub Release.
+ForgePy v1.1.0 is the current stable Git tag and GitHub Release.
 
 The naming is:
 
@@ -380,7 +378,9 @@ CLI command : forgepy
 Distribution: forgepy-cli
 ```
 
-Trusted Publishing is configured in the repository, but the first PyPI upload has not yet occurred.
+ForgePy 1.1.0 is published on PyPI as `forgepy-cli`.
+
+Trusted Publishing is configured through GitHub Actions for release publication.
 
 ## License
 
