@@ -202,12 +202,11 @@ class ComponentInstallerTests(unittest.TestCase):
             ComponentStateStore,
             "add",
             side_effect=ComponentStateIOError("state failed"),
+        ), self.assertRaisesRegex(
+            ComponentStateIOError,
+            "state failed",
         ):
-            with self.assertRaisesRegex(
-                ComponentStateIOError,
-                "state failed",
-            ):
-                self._installer().install(component.name, self.project_path)
+            self._installer().install(component.name, self.project_path)
 
         self.assertEqual(component.install_calls, 1)
         self.assertTrue((self.project_path / "example.txt").is_file())

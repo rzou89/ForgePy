@@ -65,10 +65,12 @@ class ComponentCommandTests(unittest.TestCase):
     def test_component_help_lists_supported_actions(self) -> None:
         output = StringIO()
 
-        with patch("sys.argv", ["forgepy", "component", "--help"]):
-            with redirect_stdout(output):
-                with self.assertRaises(SystemExit) as context:
-                    Parser().parse()
+        with (
+            patch("sys.argv", ["forgepy", "component", "--help"]),
+            redirect_stdout(output),
+            self.assertRaises(SystemExit) as context,
+        ):
+            Parser().parse()
 
         self.assertEqual(context.exception.code, 0)
         self.assertIn("list", output.getvalue())
@@ -81,10 +83,8 @@ class ComponentCommandTests(unittest.TestCase):
         with patch(
             "sys.argv",
             ["forgepy", "component", "installed", "--help"],
-        ):
-            with redirect_stdout(output):
-                with self.assertRaises(SystemExit) as context:
-                    Parser().parse()
+        ), redirect_stdout(output), self.assertRaises(SystemExit) as context:
+            Parser().parse()
 
         self.assertEqual(context.exception.code, 0)
         self.assertIn("--project PATH", output.getvalue())
@@ -334,17 +334,15 @@ class ComponentCommandTests(unittest.TestCase):
         registry.register(component)
         command = ComponentCommand(registry=registry)
 
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            with patch.object(
-                component,
-                "install",
-                side_effect=KeyError("hook defect"),
-            ):
-                with self.assertRaisesRegex(KeyError, "hook defect"):
-                    command._add(
-                        component.name,
-                        Path(temporary_directory),
-                    )
+        with tempfile.TemporaryDirectory() as temporary_directory, patch.object(
+            component,
+            "install",
+            side_effect=KeyError("hook defect"),
+        ), self.assertRaisesRegex(KeyError, "hook defect"):
+            command._add(
+                component.name,
+                Path(temporary_directory),
+            )
 
     def test_component_add_rejects_invalid_project_path(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -544,10 +542,9 @@ class ComponentCommandTests(unittest.TestCase):
     ) -> str:
         output = StringIO()
 
-        with patch("sys.argv", ["forgepy", *arguments]):
-            with redirect_stdout(output):
-                args = Parser(commands=commands).parse()
-                Dispatcher(commands=commands).dispatch(args)
+        with patch("sys.argv", ["forgepy", *arguments]), redirect_stdout(output):
+            args = Parser(commands=commands).parse()
+            Dispatcher(commands=commands).dispatch(args)
 
         return output.getvalue()
 

@@ -11,7 +11,6 @@ from pathlib import Path
 from builders.base_builder import BaseBuilder
 from core.venv_paths import get_venv_python
 
-
 PACKAGE_TOOL_UPDATE_TIMEOUT_SECONDS = 300
 
 

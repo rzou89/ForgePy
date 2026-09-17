@@ -129,13 +129,12 @@ class ProjectGeneratorLifecycleTests(unittest.TestCase):
                     patch("core.project_generator.GitBuilder.create")
                 )
 
-                with redirect_stdout(output):
-                    with self.assertRaisesRegex(OSError, "VS Code write failed"):
-                        ProjectGenerator().create(
-                            project_name="VSCodeFailure",
-                            location=str(parent),
-                            template_name="basic",
-                        )
+                with redirect_stdout(output), self.assertRaisesRegex(OSError, "VS Code write failed"):
+                    ProjectGenerator().create(
+                        project_name="VSCodeFailure",
+                        location=str(parent),
+                        template_name="basic",
+                    )
 
             git.assert_not_called()
             self.assertNotIn("Project berhasil dibuat", output.getvalue())
@@ -168,13 +167,12 @@ class ProjectGeneratorLifecycleTests(unittest.TestCase):
                     )
                 )
 
-                with redirect_stdout(output):
-                    with self.assertRaises(subprocess.CalledProcessError):
-                        ProjectGenerator().create(
-                            project_name="GitFailure",
-                            location=str(parent),
-                            template_name="basic",
-                        )
+                with redirect_stdout(output), self.assertRaises(subprocess.CalledProcessError):
+                    ProjectGenerator().create(
+                        project_name="GitFailure",
+                        location=str(parent),
+                        template_name="basic",
+                    )
 
             self.assertNotIn("Project berhasil dibuat", output.getvalue())
 
@@ -200,16 +198,15 @@ class ProjectGeneratorLifecycleTests(unittest.TestCase):
                     patch("core.git_builder.shutil.which", return_value=None)
                 )
 
-                with redirect_stdout(output):
-                    with self.assertRaisesRegex(
-                        FileNotFoundError,
-                        "Git executable is required",
-                    ):
-                        ProjectGenerator().create(
-                            project_name=project_root.name,
-                            location=str(parent),
-                            template_name="basic",
-                        )
+                with redirect_stdout(output), self.assertRaisesRegex(
+                    FileNotFoundError,
+                    "Git executable is required",
+                ):
+                    ProjectGenerator().create(
+                        project_name=project_root.name,
+                        location=str(parent),
+                        template_name="basic",
+                    )
 
             self.assertTrue((project_root / "app.py").is_file())
             self.assertTrue((project_root / ".vscode").is_dir())
@@ -221,14 +218,11 @@ class GitBuilderFailureTests(unittest.TestCase):
     def test_missing_git_is_reported_as_required_without_subprocess(self) -> None:
         output = StringIO()
 
-        with patch("core.git_builder.shutil.which", return_value=None):
-            with patch("core.git_builder.subprocess.run") as run:
-                with redirect_stdout(output):
-                    with self.assertRaisesRegex(
-                        FileNotFoundError,
-                        "Git executable is required but was not found",
-                    ):
-                        GitBuilder().create(Path("project"))
+        with patch("core.git_builder.shutil.which", return_value=None), patch("core.git_builder.subprocess.run") as run, redirect_stdout(output), self.assertRaisesRegex(
+            FileNotFoundError,
+            "Git executable is required but was not found",
+        ):
+            GitBuilder().create(Path("project"))
 
         run.assert_not_called()
         self.assertNotIn("Git Repository berhasil dibuat", output.getvalue())
@@ -240,14 +234,11 @@ class GitBuilderFailureTests(unittest.TestCase):
             project_root = Path(temporary_directory)
             output = StringIO()
 
-            with patch("core.git_builder.shutil.which", return_value="git"):
-                with patch(
-                    "core.git_builder.subprocess.run",
-                    side_effect=[None, None, failure],
-                ):
-                    with redirect_stdout(output):
-                        with self.assertRaises(subprocess.CalledProcessError):
-                            GitBuilder().create(project_root)
+            with patch("core.git_builder.shutil.which", return_value="git"), patch(
+                "core.git_builder.subprocess.run",
+                side_effect=[None, None, failure],
+            ), redirect_stdout(output), self.assertRaises(subprocess.CalledProcessError):
+                GitBuilder().create(project_root)
 
         self.assertIn("Initial Commit gagal", output.getvalue())
         self.assertNotIn("Git Repository berhasil dibuat", output.getvalue())

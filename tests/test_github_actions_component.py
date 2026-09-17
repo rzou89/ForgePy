@@ -12,7 +12,6 @@ from components.component_registry import ComponentRegistry
 from components.component_state import ComponentStateStore
 from components.github_actions_component import GitHubActionsComponent
 
-
 EXPECTED_WORKFLOW = (
     "name: CI\n"
     "\n"

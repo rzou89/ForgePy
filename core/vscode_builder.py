@@ -16,10 +16,10 @@ Deskripsi:
 from pathlib import Path
 
 from templates.vscode import (
-    settings_template,
-    launch_template,
-    tasks_template,
     extensions_template,
+    launch_template,
+    settings_template,
+    tasks_template,
 )
 
 

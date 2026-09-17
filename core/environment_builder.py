@@ -2,7 +2,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 VENV_CREATION_TIMEOUT_SECONDS = 300
 
 

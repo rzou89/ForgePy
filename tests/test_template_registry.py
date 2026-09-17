@@ -179,34 +179,32 @@ class TemplateMetadataTests(unittest.TestCase):
 
     def test_metadata_rejects_empty_names(self) -> None:
         for name in ("", "   "):
-            with self.subTest(name=name):
-                with self.assertRaisesRegex(
-                    ValueError,
-                    "name must not be empty",
-                ):
-                    TemplateMetadata(
-                        name=name,
-                        description="Example template.",
-                        version="1.0.0",
-                        author="Example Author",
-                        tags=(),
-                    )
+            with self.subTest(name=name), self.assertRaisesRegex(
+                ValueError,
+                "name must not be empty",
+            ):
+                TemplateMetadata(
+                    name=name,
+                    description="Example template.",
+                    version="1.0.0",
+                    author="Example Author",
+                    tags=(),
+                )
 
     def test_metadata_rejects_empty_display_name(self) -> None:
         for display_name in ("", "   "):
-            with self.subTest(display_name=display_name):
-                with self.assertRaisesRegex(
-                    ValueError,
-                    "display_name must not be empty",
-                ):
-                    TemplateMetadata(
-                        name="example",
-                        description="Example template.",
-                        version="1.0.0",
-                        author="Example Author",
-                        tags=(),
-                        display_name=display_name,
-                    )
+            with self.subTest(display_name=display_name), self.assertRaisesRegex(
+                ValueError,
+                "display_name must not be empty",
+            ):
+                TemplateMetadata(
+                    name="example",
+                    description="Example template.",
+                    version="1.0.0",
+                    author="Example Author",
+                    tags=(),
+                    display_name=display_name,
+                )
 
     def test_legacy_template_receives_compatibility_metadata(self) -> None:
         metadata = LegacyTemplate().metadata
@@ -401,17 +399,14 @@ class ListCommandMetadataTests(unittest.TestCase):
             side_effect=AssertionError(
                 "Listing templates must not access user configuration."
             ),
-        ):
-            with patch(
-                "cli.commands.create_command.ProjectGenerator",
-                side_effect=AssertionError(
-                    "Listing templates must not generate a project."
-                ),
-            ):
-                with patch("sys.argv", ["forgepy", "list"]):
-                    with redirect_stdout(output):
-                        args = Parser().parse()
-                        Dispatcher().dispatch(args)
+        ), patch(
+            "cli.commands.create_command.ProjectGenerator",
+            side_effect=AssertionError(
+                "Listing templates must not generate a project."
+            ),
+        ), patch("sys.argv", ["forgepy", "list"]), redirect_stdout(output):
+            args = Parser().parse()
+            Dispatcher().dispatch(args)
 
         self.assertIn(
             "- basic: Basic Python project starter template.",

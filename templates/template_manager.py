@@ -6,17 +6,16 @@ Template Manager
 """
 
 from templates.app_template import get_app
-from templates.gitignore_template import get_gitignore
-from templates.readme_template import get_readme
-from templates.requirements_template import get_requirements
-
-from templates.license_template import get_license
 from templates.changelog_template import get_changelog
 from templates.env_template import (
     get_env,
     get_env_example,
 )
+from templates.gitignore_template import get_gitignore
+from templates.license_template import get_license
 from templates.pyproject_template import get_pyproject
+from templates.readme_template import get_readme
+from templates.requirements_template import get_requirements
 
 
 class TemplateManager:

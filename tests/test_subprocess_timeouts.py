@@ -15,8 +15,8 @@ from builders.python_tools_builder import (
 )
 from cli.commands.create_command import CreateCommand
 from core.environment_builder import (
-    EnvironmentBuilder,
     VENV_CREATION_TIMEOUT_SECONDS,
+    EnvironmentBuilder,
 )
 from core.git_builder import (
     GIT_ADD_TIMEOUT_SECONDS,
@@ -41,10 +41,8 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
         with patch(
             "core.environment_builder.subprocess.run",
             side_effect=failure,
-        ) as run:
-            with redirect_stdout(output):
-                with self.assertRaises(subprocess.TimeoutExpired):
-                    EnvironmentBuilder().create(Path("project"))
+        ) as run, redirect_stdout(output), self.assertRaises(subprocess.TimeoutExpired):
+            EnvironmentBuilder().create(Path("project"))
 
         self.assertEqual(
             run.call_args.kwargs["timeout"],
@@ -65,10 +63,8 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
             with patch(
                 "builders.python_tools_builder.subprocess.run",
                 side_effect=failure,
-            ) as run:
-                with redirect_stdout(output):
-                    with self.assertRaises(subprocess.TimeoutExpired):
-                        PythonToolsBuilder().update(project_root)
+            ) as run, redirect_stdout(output), self.assertRaises(subprocess.TimeoutExpired):
+                PythonToolsBuilder().update(project_root)
 
         self.assertEqual(
             run.call_args.kwargs["timeout"],
@@ -94,10 +90,8 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
             with patch(
                 "core.requirements_installer.subprocess.run",
                 side_effect=failure,
-            ) as run:
-                with redirect_stdout(output):
-                    with self.assertRaises(subprocess.TimeoutExpired):
-                        RequirementsInstaller().install(project_root)
+            ) as run, redirect_stdout(output), self.assertRaises(subprocess.TimeoutExpired):
+                RequirementsInstaller().install(project_root)
 
         self.assertEqual(
             run.call_args.kwargs["timeout"],
@@ -119,22 +113,18 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
                 side_effects[failure_index] = failure
                 output = StringIO()
 
-                with tempfile.TemporaryDirectory() as temporary_directory:
-                    with patch(
-                        "core.git_builder.shutil.which",
-                        return_value="git",
-                    ):
-                        with patch(
-                            "core.git_builder.subprocess.run",
-                            side_effect=side_effects,
-                        ) as run:
-                            with redirect_stdout(output):
-                                with self.assertRaises(
-                                    subprocess.TimeoutExpired
-                                ):
-                                    GitBuilder().create(
-                                        Path(temporary_directory)
-                                    )
+                with tempfile.TemporaryDirectory() as temporary_directory, patch(
+                    "core.git_builder.shutil.which",
+                    return_value="git",
+                ), patch(
+                    "core.git_builder.subprocess.run",
+                    side_effect=side_effects,
+                ) as run, redirect_stdout(output), self.assertRaises(
+                    subprocess.TimeoutExpired
+                ):
+                    GitBuilder().create(
+                        Path(temporary_directory)
+                    )
 
                 self.assertEqual(
                     run.call_args_list[failure_index].kwargs["timeout"],
@@ -153,10 +143,8 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
         with patch(
             "core.environment_builder.subprocess.run",
             side_effect=failure,
-        ):
-            with redirect_stdout(StringIO()):
-                with self.assertRaises(subprocess.CalledProcessError) as context:
-                    EnvironmentBuilder().create(Path("project"))
+        ), redirect_stdout(StringIO()), self.assertRaises(subprocess.CalledProcessError) as context:
+            EnvironmentBuilder().create(Path("project"))
 
         self.assertIs(context.exception, failure)
 
@@ -189,13 +177,12 @@ class LifecycleSubprocessTimeoutTests(unittest.TestCase):
                     patch("core.project_generator.GitBuilder.create")
                 )
 
-                with redirect_stdout(output):
-                    with self.assertRaises(subprocess.TimeoutExpired):
-                        ProjectGenerator().create(
-                            project_name="TimeoutDemo",
-                            location=str(parent),
-                            template_name="basic",
-                        )
+                with redirect_stdout(output), self.assertRaises(subprocess.TimeoutExpired):
+                    ProjectGenerator().create(
+                        project_name="TimeoutDemo",
+                        location=str(parent),
+                        template_name="basic",
+                    )
 
             python_tools.assert_not_called()
             requirements.assert_not_called()
@@ -212,19 +199,17 @@ class CliTimeoutTranslationTests(unittest.TestCase):
         )
         output = StringIO()
 
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            with patch(
-                "cli.commands.create_command.ProjectGenerator.create",
-                side_effect=failure,
-            ):
-                with redirect_stdout(output):
-                    status = CreateCommand().execute(
-                        Namespace(
-                            project_name="MissingGit",
-                            location=temporary_directory,
-                            template="basic",
-                        )
-                    )
+        with tempfile.TemporaryDirectory() as temporary_directory, patch(
+            "cli.commands.create_command.ProjectGenerator.create",
+            side_effect=failure,
+        ), redirect_stdout(output):
+            status = CreateCommand().execute(
+                Namespace(
+                    project_name="MissingGit",
+                    location=temporary_directory,
+                    template="basic",
+                )
+            )
 
         self.assertEqual(status, 1)
         self.assertIn("[ERROR] Project creation failed", output.getvalue())
@@ -235,19 +220,17 @@ class CliTimeoutTranslationTests(unittest.TestCase):
         failure = subprocess.TimeoutExpired("venv", 300)
         output = StringIO()
 
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            with patch(
-                "cli.commands.create_command.ProjectGenerator.create",
-                side_effect=failure,
-            ):
-                with redirect_stdout(output):
-                    status = CreateCommand().execute(
-                        Namespace(
-                            project_name="TimeoutDemo",
-                            location=temporary_directory,
-                            template="basic",
-                        )
-                    )
+        with tempfile.TemporaryDirectory() as temporary_directory, patch(
+            "cli.commands.create_command.ProjectGenerator.create",
+            side_effect=failure,
+        ), redirect_stdout(output):
+            status = CreateCommand().execute(
+                Namespace(
+                    project_name="TimeoutDemo",
+                    location=temporary_directory,
+                    template="basic",
+                )
+            )
 
         self.assertEqual(status, 1)
         self.assertIn("[ERROR] Project creation failed", output.getvalue())

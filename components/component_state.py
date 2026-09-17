@@ -9,7 +9,6 @@ from pathlib import Path
 
 from components.component_context import ComponentContext
 
-
 STATE_DIRECTORY_NAME = ".forgepy"
 STATE_FILENAME = "components.json"
 INSTALLED_KEY = "installed"

@@ -4,6 +4,7 @@ import unittest
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 from core.project_generator import ProjectGenerator
@@ -15,7 +16,7 @@ from templates.library.library_template import LibraryTemplate
 
 class VSCodeBuilderTests(unittest.TestCase):
 
-    _VSCODE_FILENAMES = {
+    _VSCODE_FILENAMES: ClassVar = {
         "extensions.json",
         "launch.json",
         "settings.json",
@@ -27,7 +28,7 @@ class VSCodeBuilderTests(unittest.TestCase):
         f"{get_venv_python_relative_path().as_posix()}"
     )
 
-    _INSTALL_REQUIREMENTS_TASK = {
+    _INSTALL_REQUIREMENTS_TASK: ClassVar = {
         "label": "Install Requirements",
         "type": "shell",
         "command": _WORKSPACE_PYTHON,

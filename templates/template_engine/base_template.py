@@ -22,7 +22,6 @@ class BaseTemplate(ABC):
         """
         Nama template.
         """
-        pass
 
     @property
     def metadata(self) -> TemplateMetadata:
@@ -55,4 +54,3 @@ class BaseTemplate(ABC):
         """
         Membuat project.
         """
-        pass

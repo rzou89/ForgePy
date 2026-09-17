@@ -14,7 +14,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 GIT_INIT_TIMEOUT_SECONDS = 60
 GIT_ADD_TIMEOUT_SECONDS = 120
 GIT_COMMIT_TIMEOUT_SECONDS = 60

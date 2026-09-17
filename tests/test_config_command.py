@@ -41,12 +41,10 @@ class ConfigCommandTests(unittest.TestCase):
                 "config",
                 "--help",
             ],
-        ):
-            with redirect_stdout(output):
-                with self.assertRaises(SystemExit) as context:
-                    Parser(
-                        commands=self.commands,
-                    ).parse()
+        ), redirect_stdout(output), self.assertRaises(SystemExit) as context:
+            Parser(
+                commands=self.commands,
+            ).parse()
 
         self.assertEqual(context.exception.code, 0)
         help_text = output.getvalue()
@@ -87,21 +85,19 @@ class ConfigCommandTests(unittest.TestCase):
         with patch(
             "config.user_config.Path.home",
             return_value=self.home_directory,
-        ) as home:
-            with patch(
-                "sys.argv",
-                [
-                    "forgepy",
-                    "config",
-                    "show",
-                ],
-            ):
-                with redirect_stdout(output):
-                    args = Parser().parse()
-                    dispatcher = Dispatcher()
+        ) as home, patch(
+            "sys.argv",
+            [
+                "forgepy",
+                "config",
+                "show",
+            ],
+        ), redirect_stdout(output):
+            args = Parser().parse()
+            dispatcher = Dispatcher()
 
-                    home.assert_not_called()
-                    dispatcher.dispatch(args)
+            home.assert_not_called()
+            dispatcher.dispatch(args)
 
         home.assert_called_once_with()
         self.assertIn(
@@ -231,14 +227,13 @@ class ConfigCommandTests(unittest.TestCase):
                 "forgepy",
                 *arguments,
             ],
-        ):
-            with redirect_stdout(output):
-                args = Parser(
-                    commands=self.commands,
-                ).parse()
-                Dispatcher(
-                    commands=self.commands,
-                ).dispatch(args)
+        ), redirect_stdout(output):
+            args = Parser(
+                commands=self.commands,
+            ).parse()
+            Dispatcher(
+                commands=self.commands,
+            ).dispatch(args)
 
         return output.getvalue()
 
