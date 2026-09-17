@@ -2,7 +2,7 @@
 
 ## Overview
 
-ForgePy is a layered command-line application. The CLI parses user input and selects a command, the create command delegates to `ProjectGenerator`, and the generator coordinates template rendering and setup services. The template registry keeps descriptive metadata alongside executable templates so listing does not invoke generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, minimal installation hooks, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. The component CLI lists that catalog, reads project-local installed state, and delegates explicit installation to `ComponentInstaller` without entering the generation flow.
+ForgePy is a layered command-line application. The CLI parses user input and selects a command. When no command is supplied, the dispatcher selects `create` and `CreateCommand` enters Easy Mode: it resolves the project name and location, presents template metadata from `TemplateRegistry`, asks for confirmation, and only then delegates to `ProjectGenerator`. Explicit `create` usage remains Advanced Mode and preserves configuration-driven template fallback without opening the template wizard. `ProjectGenerator` coordinates template rendering and setup services. The template registry keeps presentation metadata alongside executable templates so both listing and interactive selection can inspect the catalog without invoking generation. Built-in templates separate per-generation context, template-owned file mappings, and explicit VS Code entry-point rules; their common execution layer delegates folder and file writes to the existing builders. An independent component package provides metadata, a declarative installation manifest, a validated existing-project context, minimal installation hooks, the `pytest`, `ruff`, and `github-actions` built-ins, and an in-memory registry. The component CLI lists that catalog, reads project-local installed state, and delegates explicit installation to `ComponentInstaller` without entering the generation flow.
 
 ## Directory structure
 
@@ -61,8 +61,8 @@ ForgePy/
 | `cli/parser.py` | Defines CLI syntax, defaults, and subcommands. |
 | `cli/command.py` | Defines command metadata, parser configuration, and execution contracts. |
 | `cli/commands/__init__.py` | Registers the built-in commands in one explicit catalog. |
-| `cli/commands/create_command.py` | Resolves project name, location, and template inputs before invoking project generation. |
-| `cli/commands/config_command.py` | Adapts configuration actions, output, and ForgePy configuration errors for the CLI. |
+| `cli/commands/create_command.py` | Separates no-command Easy Mode from explicit Advanced Mode, resolves project inputs, renders the interactive template wizard and confirmation flow, and invokes project generation only after approval. |
+| `cli/commands/config_command.py` | Adapts configuration actions, output, and ForgePy configuration errors for the CLI.|
 | `cli/commands/component_command.py` | Lists registered components, presents project-local installed state, delegates add operations to `ComponentInstaller`, and adapts operational errors for the CLI. |
 | `cli/dispatcher.py` | Builds command lookup from the shared catalog; defaults to `create`. |
 | `cli/commands/` | Validates command-level input and invokes application services. |
@@ -94,7 +94,7 @@ ForgePy/
 | `templates/template_engine/file_template.py` | Implements the common context, folder, ordered-file-write, and VS Code entry-point-resolution lifecycle for built-ins. |
 | `templates/template_engine/package_name.py` | Normalizes project names into ASCII Python package identifiers for package-oriented templates. |
 | `templates/template_engine/template_context.py` | Carries the project path/name and optional normalized package name for one generation. |
-| `templates/template_engine/template_metadata.py` | Defines immutable descriptive metadata for registered templates. |
+| `templates/template_engine/template_metadata.py` | Defines immutable registered-template metadata, including internal name/description/version/author/tags plus optional user-facing `display_name` and `use_cases`. |
 | `templates/template_engine/template_registry.py` | Registers templates by metadata name and supplies template and metadata lookups. |
 | `templates/template_engine/template_files.py` | Preserves the original `TemplateFiles.basic()` API as a facade over `BasicFiles`. |
 | `templates/template_manager.py` | Provides one facade over generated root-file content. |
@@ -110,7 +110,7 @@ ForgePy/
 | `tests/test_pytest_component.py` | Verifies pytest metadata, manifest, deterministic registration, isolated installation, and existing-target behavior. |
 | `tests/test_ruff_component.py` | Verifies Ruff metadata, manifest, deterministic registration, isolated installation, installer integration, and existing-target behavior. |
 | `tests/test_config_command.py` | Verifies configuration parsing, dispatch, output, persistence, reset, and error handling with an isolated home. |
-| `tests/test_create_command.py` | Verifies create-input precedence, prompting, configuration errors, and generator delegation without generating a project. |
+| `tests/test_create_command.py` | Verifies Easy/Advanced Mode separation, template selection, invalid-input retry, cancellation, confirmation, create-input precedence, configuration errors, and generator delegation without generating a real project. |
 | `tests/test_cli_template.py` | Verifies CLI metadata, registration, exact output, normalization, module execution, help, version, and editor-entry execution. |
 | `tests/test_library_template.py` | Verifies library metadata, registration, exact output, name normalization, generator selection, and basic compatibility in temporary directories. |
 | `tests/test_template_architecture.py` | Verifies context/entry-point separation, the basic mapping facade, exact pre-refactor template-output snapshots, and context-derived CLI entry points. |
@@ -151,10 +151,10 @@ Future GitHub Releases trigger on publication; `workflow_dispatch` provides the
 deliberate first-publication path because the existing v1.0.0 event cannot be
 replayed by adding a workflow later.
 
-## Release-Candidate Validation
+## Release validation baseline
 
-The Sprint 12.6 RC gate requires the full unit suite, `compileall`, source-tree
-CLI smoke checks, and fresh wheel and sdist builds. Artifact inspection must
+The v1.0 release-validation baseline established the full unit suite, `compileall`, source-tree
+CLI smoke checks, and fresh wheel and sdist builds as the expected release gate. Artifact inspection must
 confirm the canonical version, README metadata, MIT metadata and license file,
 the console entry point, required runtime packages, the sdist changelog and
 `pyproject.toml`, and exclusion of `tests` and `utils`. The built wheel must then
@@ -180,8 +180,13 @@ must be recorded separately before either client edition is claimed as tested.
 flowchart LR
     CLI[config show / set / reset] --> Command[ConfigCommand]
     Command --> Store[ConfigStore]
-    Create[CreateCommand] -->|location or template omitted| Store
-    Store -->|default_location and default_template| Create
+
+    Easy[CreateCommand Easy Mode] -->|location omitted| Store
+    Store -->|default_location| Easy
+
+    Advanced[CreateCommand Advanced Mode] -->|location or template omitted| Store
+    Store -->|default_location / default_template| Advanced
+
     Caller[Tests or library caller] --> Store
     Store --> Defaults[Safe defaults]
     Store --> Validation[Supported names and string values]
@@ -189,11 +194,11 @@ flowchart LR
     File --> Store
 ```
 
-The supported defaults are `default_template = "basic"`, `default_location = ""`, `author = ""`, and `license = "MIT"`. Loading a missing file returns a new defaults dictionary without creating the directory. Saving creates the directory and atomically replaces the JSON file. Updates preserve other settings; reset is the explicit operation that replaces persisted content with defaults.
+The supported defaults are `default_template = "basic"`, `default_location = ""`, `author = ""`, and `license = "MIT"`. Loading a missing file returns a new defaults dictionary without creating the directory. Saving creates the directory andatomically replaces the JSON file. Updates preserve other settings; reset is the explicit operation that replaces persisted content with defaults.
 
 `config show` delegates to `ConfigStore.load()`, `config set KEY VALUE` delegates to `ConfigStore.update()`, and `config reset` delegates to `ConfigStore.reset()`. The command formats successful output and converts errors derived from `ForgePyConfigError` into concise CLI messages. A failed show or set does not replace malformed user data; reset is the explicit recovery operation that persists defaults.
 
-When `--location` or `--template` is omitted, `CreateCommand` loads configuration once and resolves only `default_location` and `default_template`. Explicit arguments have priority. An empty configured location preserves the existing prompt, and an empty configured template falls back to `"basic"`. If the required read fails, the command reports the ForgePy configuration error and stops before prompting or generation. When both options are explicit, configuration is not read.
+`CreateCommand` reads configuration only when the active mode needs it. In Easy Mode, an omitted location may use `default_location`, but template choice is presented through `TemplateRegistry` metadata rather than silently applying `default_template`. In Advanced Mode, omitted location and template values use `default_location` and `default_template`; an empty configured location preserves the location prompt, while an empty configured template falls back to `"basic"`. Explicit Advanced Mode arguments have priority. If a required configuration read fails, the command reports the ForgePy configuration error and stops before generation. Fully explicit Advanced Mode creation does not read configuration.
 
 `author` and `license` remain persisted but unused. `ProjectGenerator`, builders, and templates do not import the store or receive its mapping, so the generation lifecycle and generated files are unchanged.
 
@@ -220,8 +225,9 @@ flowchart TD
     Dispatcher --> Component[ComponentCommand]
 
     Create --> UserConfig
+    Create -->|Easy Mode template catalog| Registry[TemplateRegistry]
     Create --> Generator[ProjectGenerator]
-    List --> Registry[TemplateRegistry]
+    List --> Registry
     Registry --> TemplateMetadata[TemplateMetadata]
     Version --> VersionConfig[config.version]
     Config --> UserConfig[ConfigStore]
@@ -287,20 +293,20 @@ CLI and orchestration layers depend on lower-level services. Template content mo
 - `Command` defines the shared name, help metadata, parser-configuration hook, and execution contract implemented by `CreateCommand`, `ListCommand`, `VersionCommand`, `ConfigCommand`, and `ComponentCommand`.
 - `cli.commands.create_commands()` is the single built-in command catalog used by both `Parser` and `Dispatcher`.
 - `Dispatcher` derives its CLI-name mapping from that catalog.
-- `CreateCommand` resolves explicit, persisted, and interactive/default inputs before invoking `ProjectGenerator` and translates only marked pre-root validation, template-lookup, filesystem, and subprocess failures at the CLI boundary; unexpected downstream `KeyError` and `ValueError` failures propagate. `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` reads installed state or delegates add operations to `ComponentInstaller` while adapting operational errors for the CLI. Commands return `0` for success or `1` for handled operational/user errors, `Dispatcher` propagates that status, and `main` converts it to the process exit code; argparse retains status `2` for syntax and usage errors.
+- `CreateCommand` distinguishes Easy Mode from Advanced Mode using the parsed command value. Easy Mode resolves project name/location, reads registered template metadata for presentation, retries invalid menu input, supports cancellation, and requires confirmation before invoking `ProjectGenerator`. Advanced Mode preserves explicit/configured/basic template resolution and does not open the template wizard when `--template` is supplied. `CreateCommand` translates only marked pre-root validation, template-lookup, filesystem, and subprocess failures at the CLI boundary; unexpected downstream `KeyError` and `ValueError` failures propagate. Deliberate Easy Mode cancellation returns `0`, handled operational/user failures return `1`, `Dispatcher` propagates command status, and `main` converts it to the process exit code; argparse retains status `2` for syntax and usage errors. `ListCommand` reads descriptive metadata from `TemplateRegistry`, `VersionCommand` reads canonical application-version metadata, `ConfigCommand` delegates user-setting operations to `ConfigStore`, and `ComponentCommand` reads installed state or delegates add operations to `ComponentInstaller` while adapting operational errors for the CLI.
 - `ProjectConfig` is a slotted dataclass used by `ProjectGenerator` to derive the target root. Its project name must be a non-empty, non-whitespace, single destination segment that is safe for current generated Python/TOML strings and the supported Windows filesystem contract. Control characters, Windows-invalid filename characters, leading or trailing ASCII spaces, trailing dots, and Windows reserved device stems (including extension forms and the superscript-digit `COM¹`-`COM³`/`LPT¹`-`LPT³` variants) are rejected explicitly. The accepted original name is not rewritten; package-oriented templates continue to normalize only their separate Python package name.
 - `ComponentMetadata` is a frozen, slotted dataclass containing `name`, `description`, component `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
 - `ComponentManifest` is a frozen, slotted dataclass containing owned or managed project-relative `pathlib.Path` entries, dependency names, and conflict names. Construction snapshots collections as tuples; rejects invalid or empty entries, duplicates, absolute paths, and lexical parent traversal; and performs no filesystem resolution.
 - `ComponentContext` contains only a `pathlib.Path` for an existing project directory and rejects missing paths, files, and non-`Path` values before installation.
 - `BaseComponent` exposes abstract `name`, `metadata`, `manifest`, and `install(context)` members. The hook defines no orchestration, rollback, discovery, or dependency behavior.
 - `ComponentInstaller.install(name, project_path)` owns only the fixed sequence connecting registry lookup, context validation, project-local state loading, already-installed rejection, direct relationship validation, one installation hook, and state recording after hook success.
-- `ComponentRegistry` deterministically registers `PytestComponent`, `RuffComponent`, then `GitHubActionsComponent`, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict, and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
+- `ComponentRegistry` deterministically registers `PytestComponent`, `RuffComponent`, then `GitHubActionsComponent`, stores component instances directly, requires matching component and metadata names, rejects self-dependency, self-conflict,and duplicate registrations before mutation, preserves registration order, and returns an immutable tuple from `list_components()`.
 - `ComponentStateStore` uses an existing project path validated through `ComponentContext`, exposes load/save/add/membership operations, and atomically persists only installed component names at `.forgepy/components.json`. It resolves the project root, state directory, state file, and write-time temporary file and rejects any path that escapes its required in-project location. Missing state is empty; malformed state raises a component-state error and is not overwritten implicitly.
 - `validate_component(component, installed_components)` checks only the selected component's direct manifest relationships against an explicit iterable of installed names. `ComponentValidationError` reports ordered missing dependencies and active conflicts together without installing or resolving anything.
 - `PytestComponent` declares only `pytest.ini`, has no dependencies or conflicts, and installs by exclusively creating deterministic pytest configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification.
 - `RuffComponent` declares only `ruff.toml`, has no dependencies or conflicts, and installs by exclusively creating deterministic Ruff configuration under `ComponentContext.project_path`. An existing target raises `FileExistsError` without modification; no Ruff package or executable is installed.
-- `GitHubActionsComponent` declares only `.github/workflows/ci.yml`, has no ForgePy component dependencies or conflicts, creates required parent directories, and exclusively writes a minimal deterministic Python CI workflow. The workflow installs pytest and Ruff on its GitHub Actions runner; local component installation installs no packages and modifies no project dependency files.
-- `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, and immutable `tags`. Construction validates scalar types, rejects empty or whitespace-only names, and snapshots tag iterables as tuples.
+- `GitHubActionsComponent` declares only `.github/workflows/ci.yml`, has no ForgePy component dependencies or conflicts,creates required parent directories, and exclusively writes a minimal deterministic Python CI workflow. The workflow installs pytest and Ruff on its GitHub Actions runner; local component installation installs no packages and modifies no project dependency files.
+- `TemplateMetadata` is a frozen, slotted dataclass containing `name`, `description`, template `version`, `author`, immutable `tags`, optional `display_name`, and immutable `use_cases`. Construction validates scalar types, rejects empty or whitespace-only names, rejects an empty supplied display name, and snapshots tag/use-case iterables as tuples. `friendly_name` returns `display_name` when present and otherwise falls back to the stable internal template name.
 - `BaseTemplate` exposes the stable public `name`, `create()`, metadata, `vscode_entry_point`, and harmless `preflight()` contracts. `FileTemplate.preflight()` constructs the same per-generation context used by `create()` so template-specific validation occurs without writes.
 - `FileTemplate` is an opt-in `BaseTemplate` implementation used by the three built-ins. It derives `name` from the class's immutable metadata, builds a `TemplateContext`, creates declared folders, writes the ordered template-owned mapping through `FileBuilder`, and assigns its resolved VS Code entry point only after all writes succeed. `_DEFAULT_VSCODE_ENTRY_POINT` supplies static behavior, while `_vscode_entry_point_for(context)` resolves context-derived paths.
 - `TemplateContext` is a frozen, slotted value containing the project path and an optional normalized package name. `project_name` is derived from the path; package-oriented hooks use a checked accessor. Normalization policy remains in `normalize_package_name()` and the Library/CLI wrappers. Library and CLI context construction therefore rejects an unusable package identifier during preflight, before the project root exists; basic context construction applies no package-name restriction.
@@ -355,7 +361,7 @@ The orchestrator does not install dependencies, calculate ordering, traverse gra
 
 The registry registers `BasicTemplate`, `LibraryTemplate`, and `CliTemplate` in that order through `register()`. Each registration stores its executable instance and immutable `TemplateMetadata` under the stable metadata name. `get()` returns the corresponding creatable template for `basic`, `library`, or `cli`, while `get_metadata()` and `list_metadata()` provide presentation data without invoking `create()`. The legacy `list_templates()` mapping remains available.
 
-Template metadata descriptions and tags are limited to implemented behavior. Template revisions are separate from the ForgePy application version and the version rendered into a generated project. `ListCommand` displays only metadata name and description, in registry order.
+Template metadata descriptions, display names, use cases, and tags are limited to implemented behavior. Template revisions are separate from the ForgePy application version and the version rendered into a generated project. `ListCommand` currently displays metadata name and description in registry order, while Easy Mode uses the same registry metadata for `friendly_name` and use-case presentation. No second template catalog is maintained in `CreateCommand`.
 
 The three built-ins inherit the opt-in `FileTemplate` implementation. Its common `create()` method performs the previously duplicated work in this order:
 
@@ -368,7 +374,7 @@ The three built-ins inherit the opt-in `FileTemplate` implementation. Its common
 
 Metadata is not part of this per-generation context. `TemplateMetadata` remains registration and presentation data; `TemplateContext` carries the project path/name and optional normalized package name; and `BasicFiles`, `LibraryFiles`, and `CliFiles` own their complete output mappings. `FileTemplate` keeps VS Code entry-point defaults and context-based resolution separate from generated content without another tooling model.
 
-`BasicFiles`, `LibraryFiles`, and `CliFiles` each instantiate `TemplateManager` and own their complete ordered mappings. They directly call the same README, Git-ignore, and pyproject renderers where output is shared. `TemplateFiles.basic()` remains available as a compatibility facade and delegates to `BasicFiles.build()`.
+`BasicFiles`, `LibraryFiles`, and `CliFiles` each instantiate `TemplateManager` and own their complete ordered mappings.They directly call the same README, Git-ignore, and pyproject renderers where output is shared. `TemplateFiles.basic()` remains available as a compatibility facade and delegates to `BasicFiles.build()`.
 
 `BasicTemplate` supplies `config.default_structure.DEFAULT_FOLDERS`, delegates its nine-file mapping to `BasicFiles`, and declares the `app.py` VS Code default. Its mapping remains `README.md`, `.gitignore`, `requirements.txt`, `app.py`, `LICENSE`, `CHANGELOG.md`, `.env`, `.env.example`, and `pyproject.toml`, with content produced through `TemplateManager`.
 
@@ -415,27 +421,39 @@ For `basic`, the entry point is `app.py`; its existing launch configuration and 
 ## CLI flow
 
 ```mermaid
-flowchart LR
+flowchart TD
     Args[Command-line arguments] --> Parse[Parser.parse]
     Catalog[Command catalog] --> Parse
     Parse --> Dispatch[Dispatcher.dispatch]
     Catalog --> Dispatch
-    Dispatch -->|create or no command| Create[CreateCommand]
+
+    Dispatch -->|no command| Easy[CreateCommand Easy Mode]
+    Dispatch -->|create| Advanced[CreateCommand Advanced Mode]
     Dispatch -->|list| List[ListCommand]
     Dispatch -->|version| Version[VersionCommand]
     Dispatch -->|config| Config[ConfigCommand]
     Dispatch -->|component| Component[ComponentCommand]
-    Create --> Resolve[Resolve create inputs]
-    Resolve -->|location or template omitted| Store[ConfigStore]
-    Store --> Resolve
-    Resolve -->|project name or location still empty| Prompt[Interactive prompts]
-    Prompt --> Resolve
-    Resolve --> Generator[ProjectGenerator.create]
+
+    Easy --> EasyName[Resolve / prompt project name]
+    EasyName --> EasyLocation[Resolve default_location / prompt location]
+    EasyLocation --> TemplateCatalog[TemplateRegistry.list_metadata]
+    TemplateCatalog --> Wizard[Interactive template selection]
+    Wizard -->|0| Cancel[Return success without generation]
+    Wizard -->|valid template| Confirm[Project summary + confirmation]
+    Confirm -->|No| Cancel
+    Confirm -->|Yes| Generator[ProjectGenerator.create]
+
+    Advanced --> ResolveAdvanced[Resolve explicit / configured create inputs]
+    ResolveAdvanced -->|location or template omitted| Store[ConfigStore]
+    Store --> ResolveAdvanced
+    ResolveAdvanced --> Generator
+
     List --> Registry[TemplateRegistry.list_metadata]
     Registry --> TemplateInfo[TemplateMetadata name + description]
     Version --> Metadata[config.version + platform]
-    Config -->|show / set / reset| Store[ConfigStore]
+    Config -->|show / set / reset| Store
     Store --> UserFile[~/.forgepy/config.json]
+
     Component -->|list| ComponentRegistry[ComponentRegistry]
     Component -->|add NAME + PATH| Installer[ComponentInstaller]
     Installer --> ComponentContext[ComponentContext]
@@ -460,17 +478,29 @@ flowchart LR
 3. `reset` explicitly persists all safe defaults, including when recovery from malformed content is required.
 4. Store errors are displayed with a ForgePy error prefix and no traceback.
 
-`ConfigCommand` manages all four persistent values. Separately, `CreateCommand` may read only `default_location` and `default_template` while resolving omitted create options. Neither command passes the store or configuration mapping into `ProjectGenerator`.
+`ConfigCommand` manages all four persistent values. `CreateCommand` may read only `default_location` and `default_template`, but mode determines how they are used: Easy Mode may consume `default_location` while presenting template choice interactively; Advanced Mode may consume both defaults when their explicit options are omitted. Neither command passes the store or configuration mapping into `ProjectGenerator`.
 
 ### Create workflow
 
-`CreateCommand` uses these independent precedence rules before calling `ProjectGenerator.create()`:
+`CreateCommand` has two create-input paths before calling `ProjectGenerator.create()`.
+
+**Easy Mode** is selected when the parsed command is absent. It uses these rules:
+
+1. Project name: parsed/default value, then the project-name prompt.
+2. Location: parsed/default value, then non-empty `default_location`, then the location prompt.
+3. Template: when no template value is already present, enumerate `TemplateRegistry.list_metadata()` for the interactive menu rather than applying `default_template`.
+4. Selection `0` cancels before confirmation or generation.
+5. Invalid menu input is rejected and retried.
+6. A valid template leads to a project summary and `Create this project? [Y/n]:` confirmation.
+7. Negative confirmation cancels before `ProjectGenerator` is created or called; affirmative/empty confirmation continues with the selected metadata name.
+
+**Advanced Mode** is selected by the explicit `create` command. It preserves the compatibility-oriented precedence rules:
 
 1. Project name: explicit positional argument, then the existing prompt.
 2. Location: explicit `--location`, then non-empty `default_location`, then the existing prompt.
 3. Template: explicit `--template`, then non-empty `default_template`, then `"basic"`.
 
-Argparse uses `None` for an omitted template so an explicit `--template basic` remains distinguishable from omission. The store is loaded only when location or template is omitted. A malformed or unreadable required configuration aborts resolution with a clear error; it is not overwritten or silently replaced by the fallback.
+Argparse uses `None` for an omitted template so an explicit `--template basic` remains distinguishable from omission. Configuration is loaded only when the active mode requires a stored value. A malformed or unreadable required configuration aborts resolution with a clear error; it is not overwritten or silently replaced by a fallback.
 
 The generator then executes these stages in order:
 
@@ -492,8 +522,8 @@ All destination checks and template lookup occur before the project root or temp
 sequenceDiagram
     participant C as CreateCommand
     participant UC as ConfigStore
-    participant G as ProjectGenerator
     participant TR as TemplateRegistry
+    participant G as ProjectGenerator
     participant T as Selected BaseTemplate
     participant TC as TemplateContext
     participant F as BasicFiles / LibraryFiles / CliFiles
@@ -501,19 +531,40 @@ sequenceDiagram
     participant B as FolderBuilder / FileBuilder
     participant E as Environment tooling
     participant R as RequirementsInstaller
-    participant Git as GitBuilder
     participant V as VSCodeBuilder
+    participant Git as GitBuilder
 
-    opt Location or template omitted
-        C->>UC: load()
-        break ConfigStore raises ForgePyConfigError
-            UC-->>C: configuration error
-            C->>C: Report error and return before generation
+    alt Easy Mode
+        opt Location omitted
+            C->>UC: load()
+            UC-->>C: default_location
         end
-        UC-->>C: validated settings
+        C->>TR: list_metadata()
+        TR-->>C: registered template metadata
+        C->>C: Render menu and retry invalid selection
+        alt User cancels selection
+            C-->>C: Return 0 without generation
+        else Template selected
+            C->>C: Render project summary and confirmation
+            alt User declines
+                C-->>C: Return 0 without generation
+            else User confirms
+                C->>G: create(name, location, selected metadata.name)
+            end
+        end
+    else Advanced Mode
+        opt Location or template omitted
+            C->>UC: load()
+            break ConfigStore raises ForgePyConfigError
+                UC-->>C: configuration error
+                C->>C: Report error and return before generation
+            end
+            UC-->>C: validated settings
+        end
+        C->>C: Resolve explicit, persisted, prompt, and basic fallback values
+        C->>G: create(name, location, template)
     end
-    C->>C: Resolve CLI, persisted, and prompt/basic values
-    C->>G: create(name, location, template)
+
     G->>G: Resolve location and validate a new direct-child destination
     G->>TR: get(template_name)
     TR-->>G: Selected template instance
@@ -569,7 +620,7 @@ Repository CI is defined separately in `.github/workflows/ci.yml`. Its `windows-
 
 - The full generation lifecycle is supported on Windows and Linux with platform-aware virtual-environment paths. The repository's Python 3.12-3.14 matrix covers `windows-latest` and `ubuntu-latest`, and a full native project-creation smoke test has passed on CachyOS Linux. macOS remains unsupported and unverified.
 - GitHub-hosted runners validate their hosted Windows and Ubuntu environments; they do not literally validate every Windows edition or Linux distribution. Additional native-platform smoke validation may remain a release-stage manual check.
-- Automated coverage includes component metadata and registry behavior, user configuration, create-input resolution, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`; the real external lifecycle and other application areas remain uncovered.
+- Automated coverage includes component metadata and registry behavior, user configuration, Easy/Advanced create-mode separation, interactive template selection/retry/cancellation/confirmation, advanced CLI compatibility, project-name and destination safety, template metadata and registry behavior, list output, shared template contracts, exact normalized template-owned file snapshots, all built-in structures, generated CLI subprocess behavior, template-aware VS Code behavior, and isolated selection through `ProjectGenerator`. Manual smoke tests have also exercised Easy Mode cancellation and successful full project creation; not every external-environment combination is automated.
 - `author` and `license` are persisted but not applied to generated content.
 - `TemplateRegistry.get()` raises `KeyError` for unknown names rather than producing a command-level error.
 - Template metadata has no independent versioning policy yet; `basic` records `0.6.0`, while `library` and `cli` start at `0.1.0` as template-specific revisions.
@@ -595,7 +646,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 ### Templates
 
 - Preserve `BaseTemplate` for custom execution models. File-mapping built-ins should use `FileTemplate` and provide only focused context, folder, file, and VS Code entry-point hooks rather than repeating builder loops. Subclasses that override `__init__()` must call `super().__init__()`.
-- Provide `TemplateMetadata` with a non-empty stable `name`; factual string `description`; string template `version` and `author`; and an iterable of string `tags` stored as a tuple. Keep its name aligned with `BaseTemplate.name` and register through `TemplateRegistry.register()`.
+- Provide `TemplateMetadata` with a non-empty stable `name`; factual string `description`; string template `version` and `author`; an iterable of string `tags`; optional non-empty `display_name`; and user-facing `use_cases`. Keep metadata presentation factual, keep the metadata name aligned with `BaseTemplate.name`, and register through `TemplateRegistry.register()` so the wizard and listing share one source of truth.
 - Build normalized package data in `TemplateContext` without moving naming policy out of `normalize_package_name()`. Keep complete ordered mappings in the owning template package and reuse established rendered content directly through `TemplateManager`.
 - Declare `_DEFAULT_VSCODE_ENTRY_POINT` for static behavior or override `_vscode_entry_point_for(context)` for a derived path. Use the real generated path or `None`, and do not infer it from the filesystem.
 - Do not change the `basic`, `library`, or `cli` names or output contracts incidentally.
@@ -610,7 +661,7 @@ Apply the design principles and Definition of Done in [`ENGINEERING_PRINCIPLES.m
 ### User Configuration
 
 - Keep persistence and validation in `ConfigStore`; `ConfigCommand` should contain only CLI parsing, presentation, and error adaptation.
-- Resolve `default_location` and `default_template` in `CreateCommand` with explicit CLI values first and existing prompt/basic behavior last.
+- Preserve the mode boundary in `CreateCommand`: Easy Mode may use `default_location` but obtains template choice from the interactive registry-backed wizard; Advanced Mode keeps explicit values first, then `default_location`/`default_template`, then existing prompt/`basic` fallback behavior.
 - Keep `ProjectGenerator`, builders, and templates independent of `ConfigStore`; applying `author` or `license` requires a separate explicit requirement.
 - Add supported settings to the defaults and validation schema together.
 - Preserve malformed files on load/update failures, and use injected temporary home directories in tests.

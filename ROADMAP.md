@@ -365,36 +365,74 @@ Publishing can occur for a newly published GitHub Release; a deliberate manual
 dispatch supports the first upload because the existing v1.0.0 Release event
 predates the workflow. No PyPI upload is claimed.
 
-## Planned — Stabilization Toward v1.0
+## Completed — Post-v1.0 Linux Support
+
+After the v1.0.0 release, ForgePy expanded the supported project-generation path from Windows-only behavior to a cross-platform Windows/Linux contract.
+
+The merged Linux support work updates virtual-environment interpreter resolution and generated VS Code configuration to use platform-aware paths while preserving the existing project-name portability rules and lifecycle ordering.
+
+| Area | Current post-v1.0 behavior |
+| --- | --- |
+| Supported platforms | Windows and Linux on CPython. |
+| Virtual environment | Windows uses `.venv/Scripts/python.exe`; POSIX systems use `.venv/bin/python`. |
+| VS Code | Generated interpreter settings follow the same platform-aware path rule. |
+| Repository CI | `windows-latest` and `ubuntu-latest` validate CPython 3.12, 3.13, and 3.14. |
+| Native smoke evidence | Full project creation has passed on CachyOS Linux. |
+| Compatibility | Windows-compatible project-name rules remain intentionally stricter so generated projects stay portable across supported platforms. |
+
+This work does not claim macOS or alternative Python implementations as supported.
+
+## Completed — Interactive Project Wizard
+
+Post-v1.0 ForgePy also added a guided Easy Mode for users who run ForgePy without a subcommand, including the VS Code **Run ▶** workflow.
+
+The merged wizard work keeps Advanced Mode backward compatible while making template selection explicit and user-friendly.
+
+| Area | Current behavior |
+| --- | --- |
+| Easy Mode | No-command startup guides project name, location, template selection, confirmation, and creation. |
+| Template catalog | The wizard reads registered templates from `TemplateRegistry` rather than duplicating a separate list. |
+| Built-in choices | `basic` = General Application, `cli` = CLI / Automation / Backend Tool, `library` = Python Library. |
+| Metadata | Templates expose user-facing `display_name` and `use_cases` in addition to the existing metadata contract. |
+| Cancellation | Selection `0` cancels before generation; confirmation `n`/`no` also cancels before `ProjectGenerator` runs. |
+| Invalid input | Invalid template selections and invalid confirmation responses are rejected and prompted again. |
+| Advanced Mode | Explicit `create` usage preserves configuration-driven fallback behavior and does not show the interactive template menu when `--template` is supplied. |
+| Verification | Focused tests cover all three selections, retries, cancellation, confirmation, and Advanced Mode separation; manual full lifecycle creation also passed. |
+
+## Planned — Post-v1.0 Maintenance
 
 These are outcome-oriented priorities, not guaranteed feature commitments.
 
 ### Repository Consistency
 
+- Keep `README.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `AGENTS.md`, `ROADMAP.md`, and `CHANGELOG.md` aligned with implemented behavior.
 - Keep the canonical application version synchronized with release tags without duplicating it in module headers.
-- Keep the public README and project metadata aligned with validated behavior.
 - Keep the MIT License file and package metadata aligned through release validation.
+- Keep template presentation metadata synchronized with the real registered template catalog.
 
 ### Verification and Failure Behavior
 
-- Continue expanding automated coverage across builders, the full generator lifecycle, and subprocess failure boundaries.
-- Define predictable validation for missing tools and failed subprocesses; destination, existing-target, and pre-write unknown-template validation are implemented.
-- Retain documented manual checks until automated infrastructure covers them.
+- Continue expanding automated coverage across builders, the full generator lifecycle, interactive behavior, and subprocess failure boundaries.
+- Preserve predictable handling for missing tools, invalid destinations, unknown templates, and failed subprocesses.
+- Retain documented manual smoke checks where hosted CI cannot prove native-platform behavior.
 
 ### Compatibility and Support
 
-- Keep repository CI green on `windows-latest` with Python 3.12, 3.13, and 3.14.
-- Stabilize the CLI contract, all three built-in template names and outputs, and the project-generation lifecycle.
-- Define a template-metadata version policy before independently evolving template revisions.
-- Provide migration notes for any intentionally incompatible pre-1.0 change.
+- Keep repository CI green on both `windows-latest` and `ubuntu-latest` with CPython 3.12, 3.13, and 3.14.
+- Preserve the stable CLI contract, all three built-in template names and outputs, and the project-generation lifecycle unless a reviewed requirement explicitly changes them.
+- Preserve the intentional distinction between Easy Mode and Advanced Mode.
+- Define a template-metadata version policy before independently evolving template revisions in ways that require compatibility guarantees.
+- Keep Windows and Linux support documented accurately without claiming macOS or alternative Python implementations as verified.
 
-### v1.0 Readiness Gate
+### Distribution and Release Maintenance
 
-ForgePy is ready for a v1.0 proposal when the current public behavior is consistently versioned, documented, tested, and supported with predictable failures. Passing this gate does not imply additional templates or commands.
+- Complete the first `forgepy-cli` PyPI publication when the maintainer deliberately approves and dispatches the prepared Trusted Publishing workflow.
+- Keep GitHub Release, package metadata, changelog, and documentation synchronized for future releases.
 
 ## Ideas — Not Scheduled
 
-- Evaluate portability beyond the current Windows-oriented virtual-environment paths.
 - Evaluate further commands or templates beyond `basic`, `library`, and `cli` only after a concrete use case and compatibility review.
+- Evaluate macOS support only after the project has a defined compatibility target and a real validation plan.
+- Evaluate additional Easy Mode usability improvements, such as friendlier interruption handling or post-creation guidance, only as separately scoped changes.
 
 Ideas become planned work only after maintainer approval, defined acceptance criteria, and an identified verification approach.
