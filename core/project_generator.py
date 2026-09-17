@@ -2,14 +2,11 @@ import os
 from pathlib import Path
 
 from builders.python_tools_builder import PythonToolsBuilder
-
 from core.environment_builder import EnvironmentBuilder
 from core.git_builder import GitBuilder
 from core.requirements_installer import RequirementsInstaller
 from core.vscode_builder import VSCodeBuilder
-
 from models.project_config import ProjectConfig
-
 from templates.template_engine.template_registry import TemplateRegistry
 
 

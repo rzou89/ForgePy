@@ -169,30 +169,27 @@ class CreateCommandConfigTests(unittest.TestCase):
         with patch(
             "sys.argv",
             ["forgepy"],
-        ):
-            with patch(
-                "builtins.input",
-                side_effect=[
-                    "Prompted Project",
-                    "D:/Prompted",
-                    "1",
-                    "y",
-                ],
-            ) as prompt:
-                with patch(
-                    "cli.commands.create_command.ProjectGenerator",
-                ) as generator:
-                    with redirect_stdout(output):
-                        args = Parser(
-                            commands=commands,
-                        ).parse()
+        ), patch(
+            "builtins.input",
+            side_effect=[
+                "Prompted Project",
+                "D:/Prompted",
+                "1",
+                "y",
+            ],
+        ) as prompt, patch(
+            "cli.commands.create_command.ProjectGenerator",
+        ) as generator, redirect_stdout(output):
+            args = Parser(
+                commands=commands,
+            ).parse()
 
-                        self.assertIsNone(args.command)
-                        self.assertIsNone(args.template)
+            self.assertIsNone(args.command)
+            self.assertIsNone(args.template)
 
-                        Dispatcher(
-                            commands=commands,
-                        ).dispatch(args)
+            Dispatcher(
+                commands=commands,
+            ).dispatch(args)
 
         prompt.assert_has_calls(
             [
@@ -423,12 +420,10 @@ class CreateCommandConfigTests(unittest.TestCase):
 
         with patch(
             "builtins.input",
-        ) as prompt:
-            with patch(
-                "cli.commands.create_command.ProjectGenerator",
-            ) as generator:
-                with redirect_stdout(output):
-                    status = self.command.execute(args)
+        ) as prompt, patch(
+            "cli.commands.create_command.ProjectGenerator",
+        ) as generator, redirect_stdout(output):
+            status = self.command.execute(args)
 
         self.assertEqual(status, 0)
         prompt.assert_not_called()
@@ -578,25 +573,22 @@ class CreateCommandConfigTests(unittest.TestCase):
             side_effect=AssertionError(
                 "Fully explicit creation must not resolve the user home."
             ),
-        ):
-            with patch(
-                "sys.argv",
-                [
-                    "forgepy",
-                    "create",
-                    "Example",
-                    "--location",
-                    "D:/Explicit",
-                    "--template",
-                    "basic",
-                ],
-            ):
-                with patch(
-                    "cli.commands.create_command.ProjectGenerator",
-                ) as generator:
-                    with redirect_stdout(output):
-                        args = Parser().parse()
-                        Dispatcher().dispatch(args)
+        ), patch(
+            "sys.argv",
+            [
+                "forgepy",
+                "create",
+                "Example",
+                "--location",
+                "D:/Explicit",
+                "--template",
+                "basic",
+            ],
+        ), patch(
+            "cli.commands.create_command.ProjectGenerator",
+        ) as generator, redirect_stdout(output):
+            args = Parser().parse()
+            Dispatcher().dispatch(args)
 
         generator.return_value.create.assert_called_once_with(
             project_name="Example",
@@ -652,12 +644,10 @@ class CreateCommandConfigTests(unittest.TestCase):
         with patch(
             "builtins.input",
             side_effect=prompt_values,
-        ) as prompt:
-            with patch(
-                "cli.commands.create_command.ProjectGenerator",
-            ) as generator:
-                with redirect_stdout(output):
-                    self.command.execute(args)
+        ) as prompt, patch(
+            "cli.commands.create_command.ProjectGenerator",
+        ) as generator, redirect_stdout(output):
+            self.command.execute(args)
 
         return generator, prompt, output.getvalue()
 
@@ -679,12 +669,10 @@ class CreateCommandConfigTests(unittest.TestCase):
         with patch(
             "builtins.input",
             side_effect=prompt_values,
-        ) as prompt:
-            with patch(
-                "cli.commands.create_command.ProjectGenerator",
-            ) as generator:
-                with redirect_stdout(output):
-                    status = self.command.execute(args)
+        ) as prompt, patch(
+            "cli.commands.create_command.ProjectGenerator",
+        ) as generator, redirect_stdout(output):
+            status = self.command.execute(args)
 
         return (
             generator,

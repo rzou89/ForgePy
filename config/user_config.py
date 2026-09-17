@@ -10,7 +10,6 @@ from json import JSONDecodeError
 from pathlib import Path
 from types import MappingProxyType
 
-
 CONFIG_DIRECTORY_NAME = ".forgepy"
 CONFIG_FILENAME = "config.json"
 

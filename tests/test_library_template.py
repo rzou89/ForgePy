@@ -232,25 +232,20 @@ class LibraryTemplateTests(unittest.TestCase):
 
             with patch(
                 "core.project_generator.EnvironmentBuilder.create",
-            ) as environment:
-                with patch(
-                    "core.project_generator.PythonToolsBuilder.update",
-                ) as python_tools:
-                    with patch(
-                        "core.project_generator.RequirementsInstaller.install",
-                    ) as requirements:
-                        with patch(
-                            "core.project_generator.GitBuilder.create",
-                        ) as git:
-                            with patch(
-                                "core.project_generator.VSCodeBuilder.create",
-                            ) as vscode:
-                                with redirect_stdout(StringIO()):
-                                    ProjectGenerator().create(
-                                        project_name="DemoLib",
-                                        location=str(parent),
-                                        template_name="library",
-                                    )
+            ) as environment, patch(
+                "core.project_generator.PythonToolsBuilder.update",
+            ) as python_tools, patch(
+                "core.project_generator.RequirementsInstaller.install",
+            ) as requirements, patch(
+                "core.project_generator.GitBuilder.create",
+            ) as git, patch(
+                "core.project_generator.VSCodeBuilder.create",
+            ) as vscode, redirect_stdout(StringIO()):
+                ProjectGenerator().create(
+                    project_name="DemoLib",
+                    location=str(parent),
+                    template_name="library",
+                )
 
             resolved_project_root = project_root.resolve()
             self.assertEqual(resolved_project_root.parent, parent.resolve())

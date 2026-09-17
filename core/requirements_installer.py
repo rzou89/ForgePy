@@ -3,7 +3,6 @@ from pathlib import Path
 
 from core.venv_paths import get_venv_python
 
-
 REQUIREMENTS_INSTALL_TIMEOUT_SECONDS = 900
 
 

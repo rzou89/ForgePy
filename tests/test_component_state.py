@@ -52,9 +52,8 @@ class ComponentStateStoreTests(unittest.TestCase):
         )
 
         for operation in operations:
-            with self.subTest(operation=operation):
-                with self.assertRaises(ComponentStateIOError):
-                    operation()
+            with self.subTest(operation=operation), self.assertRaises(ComponentStateIOError):
+                operation()
 
         self.assertEqual(self.store.state_directory.read_bytes(), original)
 
@@ -150,12 +149,14 @@ class ComponentStateStoreTests(unittest.TestCase):
                 raise OSError("replace failed")
             return original_replace(source, target)
 
-        with patch.object(Path, "replace", fail_for_temporary_file):
-            with self.assertRaisesRegex(
+        with (
+            patch.object(Path, "replace", fail_for_temporary_file),
+            self.assertRaisesRegex(
                 ComponentStateIOError,
                 "could not save",
-            ):
-                self.store.save(("lint",))
+            ),
+        ):
+            self.store.save(("lint",))
 
         self.assertEqual(self.store.state_path.read_bytes(), original)
         self.assertEqual(
@@ -200,12 +201,11 @@ class ComponentStateStoreTests(unittest.TestCase):
         )
 
         for operation in operations:
-            with self.subTest(operation=operation):
-                with self.assertRaisesRegex(
-                    ComponentStateIOError,
-                    "resolves outside",
-                ):
-                    operation()
+            with self.subTest(operation=operation), self.assertRaisesRegex(
+                ComponentStateIOError,
+                "resolves outside",
+            ):
+                operation()
 
         self.assertTrue(self.store.state_directory.is_symlink())
         self.assertEqual(outside_file.read_bytes(), original)
@@ -224,12 +224,11 @@ class ComponentStateStoreTests(unittest.TestCase):
         )
 
         for operation in operations:
-            with self.subTest(operation=operation):
-                with self.assertRaisesRegex(
-                    ComponentStateIOError,
-                    "resolves outside",
-                ):
-                    operation()
+            with self.subTest(operation=operation), self.assertRaisesRegex(
+                ComponentStateIOError,
+                "resolves outside",
+            ):
+                operation()
 
         self.assertTrue(self.store.state_path.is_symlink())
         self.assertEqual(outside_file.read_bytes(), original)

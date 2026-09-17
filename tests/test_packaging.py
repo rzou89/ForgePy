@@ -136,9 +136,11 @@ class PackagingMetadataTests(unittest.TestCase):
         dispatcher = Mock()
         dispatcher.dispatch.return_value = 7
 
-        with patch("main.Parser", return_value=parser):
-            with patch("main.Dispatcher", return_value=dispatcher):
-                self.assertEqual(application_entry.main(), 7)
+        with (
+            patch("main.Parser", return_value=parser),
+            patch("main.Dispatcher", return_value=dispatcher),
+        ):
+            self.assertEqual(application_entry.main(), 7)
 
         dispatcher.dispatch.assert_called_once_with(arguments)
 

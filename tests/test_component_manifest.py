@@ -56,9 +56,8 @@ class ComponentManifestTests(unittest.TestCase):
         )
 
         for values in invalid_values:
-            with self.subTest(values=values):
-                with self.assertRaises(ValueError):
-                    ComponentManifest(**values)  # type: ignore[arg-type]
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                ComponentManifest(**values)  # type: ignore[arg-type]
 
     def test_manifest_rejects_invalid_entry_types(self) -> None:
         invalid_values = (
@@ -68,9 +67,8 @@ class ComponentManifestTests(unittest.TestCase):
         )
 
         for values in invalid_values:
-            with self.subTest(values=values):
-                with self.assertRaises(TypeError):
-                    ComponentManifest(**values)  # type: ignore[arg-type]
+            with self.subTest(values=values), self.assertRaises(TypeError):
+                ComponentManifest(**values)  # type: ignore[arg-type]
 
     def test_manifest_accepts_only_project_relative_file_paths(self) -> None:
         manifest = ComponentManifest(
@@ -88,9 +86,8 @@ class ComponentManifestTests(unittest.TestCase):
 
     def test_manifest_rejects_parent_traversal_segments(self) -> None:
         for path in (Path("../outside.txt"), Path("files/../../outside.txt")):
-            with self.subTest(path=path):
-                with self.assertRaises(ValueError):
-                    ComponentManifest(files=(path,))
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                ComponentManifest(files=(path,))
 
     def test_manifest_rejects_duplicates_consistently(self) -> None:
         invalid_values = (
@@ -100,9 +97,8 @@ class ComponentManifestTests(unittest.TestCase):
         )
 
         for values in invalid_values:
-            with self.subTest(values=values):
-                with self.assertRaises(ValueError):
-                    ComponentManifest(**values)  # type: ignore[arg-type]
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                ComponentManifest(**values)  # type: ignore[arg-type]
 
     def test_manifest_allows_dependency_and_conflict_overlap(self) -> None:
         manifest = ComponentManifest(

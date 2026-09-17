@@ -1,7 +1,6 @@
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
-import unicodedata
-
 
 WINDOWS_INVALID_NAME_CHARACTERS = frozenset('<>:"/\\|?*')
 WINDOWS_RESERVED_NAME_STEMS = frozenset(

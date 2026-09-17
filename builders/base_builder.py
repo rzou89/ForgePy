@@ -13,5 +13,3 @@ class BaseBuilder:
     Digunakan sebagai parent agar seluruh Builder
     mempunyai struktur yang konsisten.
     """
-
-    pass

@@ -11,7 +11,6 @@ from cli.commands.create_command import CreateCommand
 from cli.commands.list_command import ListCommand
 from cli.commands.version_command import VersionCommand
 
-
 DEFAULT_COMMAND = "create"
 
 

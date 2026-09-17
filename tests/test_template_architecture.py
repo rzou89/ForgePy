@@ -4,6 +4,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from typing import ClassVar
 
 from templates.basic.basic_files import BasicFiles
 from templates.basic.basic_template import BasicTemplate
@@ -17,7 +18,7 @@ class TemplateArchitectureTests(unittest.TestCase):
 
     maxDiff = None
 
-    _EXPECTED_DIRECTORIES = {
+    _EXPECTED_DIRECTORIES: ClassVar = {
         "basic": {
             "assets",
             "config",
@@ -41,7 +42,7 @@ class TemplateArchitectureTests(unittest.TestCase):
 
     # SHA-256 values pin the normalized UTF-8 text produced before the
     # architecture refactor, independently of the production renderers.
-    _EXPECTED_TEMPLATE_FILES = {
+    _EXPECTED_TEMPLATE_FILES: ClassVar = {
         "basic": {
             ".env": (
                 "d4eeb664f84278ae0f07b0065cd04d1f"

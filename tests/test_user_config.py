@@ -67,12 +67,11 @@ class ConfigStoreTests(unittest.TestCase):
         with patch(
             "config.user_config.Path.read_text",
             side_effect=PermissionError("access denied"),
+        ), self.assertRaisesRegex(
+            ConfigIOError,
+            "ForgePy could not read configuration",
         ):
-            with self.assertRaisesRegex(
-                ConfigIOError,
-                "ForgePy could not read configuration",
-            ):
-                self.store.load()
+            self.store.load()
 
         self.assertEqual(
             self.store.config_path.read_bytes(),
@@ -136,15 +135,14 @@ class ConfigStoreTests(unittest.TestCase):
         with patch(
             "config.user_config.Path.replace",
             side_effect=OSError("replace failed"),
+        ), self.assertRaisesRegex(
+            ConfigIOError,
+            "ForgePy could not save configuration",
         ):
-            with self.assertRaisesRegex(
-                ConfigIOError,
-                "ForgePy could not save configuration",
-            ):
-                self.store.update(
-                    "author",
-                    "Replacement Author",
-                )
+            self.store.update(
+                "author",
+                "Replacement Author",
+            )
 
         self.assertEqual(
             self.store.config_path.read_bytes(),

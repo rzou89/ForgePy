@@ -225,12 +225,11 @@ class ComponentMetadataTests(unittest.TestCase):
 
     def test_metadata_rejects_empty_names(self) -> None:
         for name in ("", "   "):
-            with self.subTest(name=name):
-                with self.assertRaisesRegex(
-                    ValueError,
-                    "name must not be empty",
-                ):
-                    component_metadata(name)
+            with self.subTest(name=name), self.assertRaisesRegex(
+                ValueError,
+                "name must not be empty",
+            ):
+                component_metadata(name)
 
     def test_metadata_rejects_non_string_fields(self) -> None:
         values: dict[str, object] = {
@@ -259,14 +258,13 @@ class ComponentMetadataTests(unittest.TestCase):
             (1, "iterable of strings"),
             (("example", 1), "only strings"),
         ):
-            with self.subTest(tags=tags):
-                with self.assertRaisesRegex(TypeError, message):
-                    ComponentMetadata(
-                        name="example",
-                        description="Example component.",
-                        version="1.0.0",
-                        author="Example Author",
-                        tags=tags,  # type: ignore[arg-type]
+            with self.subTest(tags=tags), self.assertRaisesRegex(TypeError, message):
+                ComponentMetadata(
+                    name="example",
+                    description="Example component.",
+                    version="1.0.0",
+                    author="Example Author",
+                    tags=tags,  # type: ignore[arg-type]
                     )
 
 

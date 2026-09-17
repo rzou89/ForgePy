@@ -11,7 +11,6 @@ from components.component_registry import ComponentRegistry
 from components.component_state import ComponentStateStore
 from components.ruff_component import RuffComponent
 
-
 EXPECTED_CONFIGURATION = (
     'line-length = 88\n'
     'target-version = "py312"\n'

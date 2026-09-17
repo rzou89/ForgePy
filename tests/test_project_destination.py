@@ -41,12 +41,11 @@ class ProjectNameContractTests(unittest.TestCase):
             )
 
             for project_name in cases:
-                with self.subTest(project_name=project_name):
-                    with self.assertRaises(ValueError):
-                        ProjectConfig(
-                            name=project_name,
-                            location=location,
-                        )
+                with self.subTest(project_name=project_name), self.assertRaises(ValueError):
+                    ProjectConfig(
+                        name=project_name,
+                        location=location,
+                    )
 
     def test_rejects_names_unsafe_for_windows_or_generated_content(self) -> None:
         invalid_characters = '<>:"/\\|?*'
@@ -63,15 +62,13 @@ class ProjectNameContractTests(unittest.TestCase):
         )
 
         for project_name in cases:
-            with self.subTest(project_name=project_name):
-                with self.assertRaises(ValueError):
-                    ProjectConfig(name=project_name, location=Path("projects"))
+            with self.subTest(project_name=project_name), self.assertRaises(ValueError):
+                ProjectConfig(name=project_name, location=Path("projects"))
 
     def test_rejects_leading_ascii_spaces(self) -> None:
         for project_name in (" Project", "  Project"):
-            with self.subTest(project_name=project_name):
-                with self.assertRaises(ValueError):
-                    ProjectConfig(name=project_name, location=Path("projects"))
+            with self.subTest(project_name=project_name), self.assertRaises(ValueError):
+                ProjectConfig(name=project_name, location=Path("projects"))
 
     def test_rejects_windows_reserved_device_names(self) -> None:
         cases = (
@@ -96,9 +93,8 @@ class ProjectNameContractTests(unittest.TestCase):
         )
 
         for project_name in cases:
-            with self.subTest(project_name=project_name):
-                with self.assertRaises(ValueError):
-                    ProjectConfig(name=project_name, location=Path("projects"))
+            with self.subTest(project_name=project_name), self.assertRaises(ValueError):
+                ProjectConfig(name=project_name, location=Path("projects"))
 
     def test_accepts_windows_reserved_name_near_misses(self) -> None:
         for project_name in ("CONSOLE", "COM10", "LPT10", "AUXILIARY"):
@@ -138,13 +134,12 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
 
             with patch(
                 "core.project_generator.TemplateRegistry"
-            ) as registry:
-                with self.assertRaises(ValueError):
-                    ProjectGenerator().create(
-                        project_name="nested/project",
-                        location=str(location),
-                        template_name="unknown",
-                    )
+            ) as registry, self.assertRaises(ValueError):
+                ProjectGenerator().create(
+                    project_name="nested/project",
+                    location=str(location),
+                    template_name="unknown",
+                )
 
             self.assertEqual(tuple(location.iterdir()), ())
             registry.assert_not_called()
@@ -161,22 +156,20 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
         )
 
         for project_name in cases:
-            with self.subTest(project_name=project_name):
-                with tempfile.TemporaryDirectory() as temporary_directory:
-                    location = Path(temporary_directory)
+            with self.subTest(project_name=project_name), tempfile.TemporaryDirectory() as temporary_directory:
+                location = Path(temporary_directory)
 
-                    with patch(
-                        "core.project_generator.TemplateRegistry"
-                    ) as registry:
-                        with self.assertRaises(ValueError):
-                            ProjectGenerator().create(
-                                project_name=project_name,
-                                location=str(location),
-                                template_name="basic",
-                            )
+                with patch(
+                    "core.project_generator.TemplateRegistry"
+                ) as registry, self.assertRaises(ValueError):
+                    ProjectGenerator().create(
+                        project_name=project_name,
+                        location=str(location),
+                        template_name="basic",
+                    )
 
-                    self.assertEqual(tuple(location.iterdir()), ())
-                    registry.assert_not_called()
+                self.assertEqual(tuple(location.iterdir()), ())
+                registry.assert_not_called()
 
     def test_existing_directory_and_contents_are_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -189,13 +182,12 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
 
             with patch(
                 "core.project_generator.TemplateRegistry"
-            ) as registry:
-                with self.assertRaises(FileExistsError):
-                    ProjectGenerator().create(
-                        project_name="Existing",
-                        location=str(location),
-                        template_name="unknown",
-                    )
+            ) as registry, self.assertRaises(FileExistsError):
+                ProjectGenerator().create(
+                    project_name="Existing",
+                    location=str(location),
+                    template_name="unknown",
+                )
 
             self.assertEqual(existing_file.read_bytes(), original_content)
             self.assertEqual(tuple(destination.iterdir()), (existing_file,))
@@ -210,13 +202,12 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
 
             with patch(
                 "core.project_generator.TemplateRegistry"
-            ) as registry:
-                with self.assertRaises(FileExistsError):
-                    ProjectGenerator().create(
-                        project_name="Existing",
-                        location=str(location),
-                        template_name="unknown",
-                    )
+            ) as registry, self.assertRaises(FileExistsError):
+                ProjectGenerator().create(
+                    project_name="Existing",
+                    location=str(location),
+                    template_name="unknown",
+                )
 
             self.assertEqual(destination.read_bytes(), original_content)
             registry.assert_not_called()
@@ -261,13 +252,12 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
 
             with patch(
                 "core.project_generator.TemplateRegistry"
-            ) as registry:
-                with self.assertRaises(FileExistsError):
-                    ProjectGenerator().create(
-                        project_name="Linked",
-                        location=str(location),
-                        template_name="unknown",
-                    )
+            ) as registry, self.assertRaises(FileExistsError):
+                ProjectGenerator().create(
+                    project_name="Linked",
+                    location=str(location),
+                    template_name="unknown",
+                )
 
             self.assertTrue(destination.is_symlink())
             self.assertEqual(destination.resolve(), outside.resolve())
@@ -314,38 +304,37 @@ class ProjectDestinationSafetyTests(unittest.TestCase):
                 with self.subTest(
                     template=template_name,
                     project_name=project_name,
-                ):
-                    with tempfile.TemporaryDirectory() as temporary_directory:
-                        location = Path(temporary_directory)
-                        destination = location / project_name
+                ), tempfile.TemporaryDirectory() as temporary_directory:
+                    location = Path(temporary_directory)
+                    destination = location / project_name
 
-                        with ExitStack() as stack:
-                            folder_create = stack.enter_context(
-                                patch(
-                                    "builders.folder_builder."
-                                    "FolderBuilder.create"
-                                )
+                    with ExitStack() as stack:
+                        folder_create = stack.enter_context(
+                            patch(
+                                "builders.folder_builder."
+                                "FolderBuilder.create"
                             )
-                            file_write = stack.enter_context(
-                                patch(
-                                    "builders.file_builder.FileBuilder.write"
-                                )
+                        )
+                        file_write = stack.enter_context(
+                            patch(
+                                "builders.file_builder.FileBuilder.write"
                             )
-                            stage_calls = self._patch_generation_stages(stack)
+                        )
+                        stage_calls = self._patch_generation_stages(stack)
 
-                            with self.assertRaises(ValueError):
-                                ProjectGenerator().create(
-                                    project_name=project_name,
-                                    location=str(location),
-                                    template_name=template_name,
-                                )
+                        with self.assertRaises(ValueError):
+                            ProjectGenerator().create(
+                                project_name=project_name,
+                                location=str(location),
+                                template_name=template_name,
+                            )
 
-                        self.assertFalse(destination.exists())
-                        self.assertEqual(tuple(location.iterdir()), ())
-                        folder_create.assert_not_called()
-                        file_write.assert_not_called()
-                        for stage_call in stage_calls:
-                            stage_call.assert_not_called()
+                    self.assertFalse(destination.exists())
+                    self.assertEqual(tuple(location.iterdir()), ())
+                    folder_create.assert_not_called()
+                    file_write.assert_not_called()
+                    for stage_call in stage_calls:
+                        stage_call.assert_not_called()
 
     def test_basic_accepts_names_without_usable_package_identifiers(
         self,
