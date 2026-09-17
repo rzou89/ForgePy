@@ -7,13 +7,13 @@
 * **Supported platforms:** Windows and Linux on CPython.
 * **Protected stable branch policy:** treat `master` as protected and stable.
 * **Current stable release/tag:** `v1.0.0`.
-* **Current development area:** documentation consistency and post-v1.0 maintenance; the first PyPI publication remains pending.
+* **Current development area:** ForgePy v1.1.0 release preparation.
 
-`config/version.py` is the canonical ForgePy version source and reports `1.0.0`.
+`config/version.py` is the canonical ForgePy version source and currently reports `1.1.0` for the release-preparation branch.
 
 The `v1.0.0` tag and GitHub stable release exist.
 
-PyPI publication is prepared under the distribution name `forgepy-cli`, while the application remains branded **ForgePy** and the installed console command remains `forgepy`.
+ForgePy 1.0.0 is already published to PyPI under the distribution name `forgepy-cli`. The application remains branded **ForgePy**, the installed console command remains `forgepy`, and version 1.1.0 has not yet been published.
 
 ## ForgePy Philosophy
 
@@ -109,7 +109,7 @@ This separation preserves the existing automation-friendly CLI while allowing th
 ## Implemented capabilities
 
 * Publish release-facing `forgepy-cli` package metadata from `pyproject.toml`, including README long description, `rzou89/ForgePy` URLs, keywords, Production/Stable classification, and MIT License metadata.
-* Derive distribution version `1.0.0` dynamically from the canonical application version source.
+* Derive distribution version `1.1.0` dynamically from the canonical application version source on the current release-preparation branch.
 * Expose `main:main` as the installed `forgepy` console command.
 * Define repository CI on `windows-latest` and `ubuntu-latest` for CPython 3.12, 3.13, and 3.14.
 * Build and inspect distributions in CI, install the wheel in isolation, and probe the installed CLI.
@@ -352,15 +352,15 @@ Use this section as the handoff point for a new developer or AI session.
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Stable baseline               | `v1.0.0` Git tag and GitHub Release                                                                             |
 | Current branch policy         | Treat `master` as protected; use a focused branch for changes                                                   |
-| Current maintenance area      | Documentation consistency, usability, and first-PyPI-publication preparation                                    |
+| Current maintenance area      | ForgePy v1.1.0 release preparation                                                                               |
 | Implemented interaction modes | Easy Mode interactive wizard and Advanced Mode CLI                                                              |
 | Implemented CLI               | `create`, `list`, `version`, `config show/set/reset`, `component list/installed/add`, plus no-command Easy Mode |
 | Implemented templates         | `basic`, `library`, and `cli`                                                                                   |
 | Template UX metadata          | `display_name`, `description`, and `use_cases` are available through registered metadata                        |
 | Component state               | `pytest`, `ruff`, and `github-actions` built-ins with project-local installation state                          |
 | Distribution identity         | PyPI name `forgepy-cli`; application ForgePy; console command `forgepy`                                         |
-| Version source                | `config/version.py`, currently `1.0.0`                                                                          |
-| Publishing state              | Trusted Publishing prepared; first PyPI upload still pending                                                    |
+| Version source                | `config/version.py`, currently `1.1.0` on the release-preparation branch                                         |
+| Publishing state              | `forgepy-cli` 1.0.0 is published on PyPI; 1.1.0 publication is pending                                          |
 
 To resume work:
 

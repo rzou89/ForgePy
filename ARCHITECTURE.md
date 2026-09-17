@@ -138,18 +138,18 @@ metadata classifies the prepared `1.0.0` release as
 uses the SPDX expression `MIT` and includes the root `LICENSE` file through
 PEP 639 metadata. No legacy license classifier is used.
 
-The current application version is `1.0.0`, and the `v1.0.0` Git tag and GitHub
+The current application version is `1.1.0` on the release-preparation branch, while the `v1.0.0` Git tag and GitHub
 Release exist. The version remains dynamically sourced from
-`config.version.VERSION`. The first `forgepy-cli` PyPI upload is still pending.
+`config.version.VERSION`. `forgepy-cli` 1.0.0 is already published on PyPI; publication of 1.1.0 is still pending.
 
 `.github/workflows/publish.yml` builds a fresh wheel and sdist in an unprivileged
 job, transfers only those files as a workflow artifact, and publishes them in a
 separate `pypi` environment through GitHub OIDC and the official PyPA action.
 The publisher identity is `rzou89/ForgePy`, workflow `publish.yml`, environment
 `pypi`. It stores no PyPI username, password, API token, or repository secret.
-Future GitHub Releases trigger on publication; `workflow_dispatch` provides the
-deliberate first-publication path because the existing v1.0.0 event cannot be
-replayed by adding a workflow later.
+Future GitHub Releases trigger publication through the workflow; `workflow_dispatch`
+remains available as a deliberate manual publication path for releases that need
+to be published outside the normal release-event flow.
 
 ## Release validation baseline
 

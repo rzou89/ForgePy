@@ -2,6 +2,7 @@
 ==================================================
 ForgePy
 Author  : Rendy Zou
+
 Module  : Version Configuration
 ==================================================
 
@@ -11,6 +12,6 @@ Deskripsi:
 
 APP_NAME = "ForgePy"
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 AUTHOR = "Rendy Zou"
